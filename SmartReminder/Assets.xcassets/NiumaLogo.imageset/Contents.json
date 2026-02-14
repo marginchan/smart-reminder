@@ -1,50 +1,50 @@
 {
   "images" : [
     {
-      "filename" : "AppLogo-Light.png",
+      "filename" : "NiumaLogo-Light.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "AppLogo-Light.png",
+      "filename" : "NiumaLogo-Light.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "AppLogo-Light.png",
+      "filename" : "NiumaLogo-Light.png",
       "idiom" : "universal",
       "scale" : "3x"
     },
     {
       "appearances" : [
         {
-          "appearance" : "any",
+          "appearance" : "luminosity",
           "value" : "dark"
         }
       ],
-      "filename" : "AppLogo-Dark.png",
+      "filename" : "NiumaLogo-Dark.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
       "appearances" : [
         {
-          "appearance" : "any",
+          "appearance" : "luminosity",
           "value" : "dark"
         }
       ],
-      "filename" : "AppLogo-Dark.png",
+      "filename" : "NiumaLogo-Dark.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
       "appearances" : [
         {
-          "appearance" : "any",
+          "appearance" : "luminosity",
           "value" : "dark"
         }
       ],
-      "filename" : "AppLogo-Dark.png",
+      "filename" : "NiumaLogo-Dark.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

@@ -558,7 +558,7 @@ struct NiumaLogoView: View {
     var size: CGFloat = 200
     
     var body: some View {
-        Image(colorScheme == .dark ? "icon_cartoon_smooth_final_dark" : "icon_cartoon_smooth_final_light")
+        Image("NiumaLogo")
             .resizable()
             .scaledToFit()
             .frame(width: size, height: size)

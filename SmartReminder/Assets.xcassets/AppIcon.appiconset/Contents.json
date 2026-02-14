@@ -9,20 +9,8 @@
     {
       "appearances" : [
         {
-          "appearance" : "any",
+          "appearance" : "luminosity",
           "value" : "dark"
-        }
-      ],
-      "filename" : "AppIcon-Dark.png",
-      "idiom" : "universal",
-      "platform" : "ios",
-      "size" : "1024x1024"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "any",
-          "value" : "tinted"
         }
       ],
       "filename" : "AppIcon-Dark.png",

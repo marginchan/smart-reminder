@@ -21,8 +21,6 @@
 		AA0000290000000000000001 /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00002A0000000000000001 /* NotesView.swift */; };
 		AA00002B0000000000000001 /* AddNoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00002C0000000000000001 /* AddNoteView.swift */; };
 		AA0000310000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000300000000000000001 /* Assets.xcassets */; };
-		D4E2C9D92F40493B009F2132 /* icon_cartoon_smooth_final_light.png in Resources */ = {isa = PBXBuildFile; fileRef = D4E2C9D82F40493B009F2132 /* icon_cartoon_smooth_final_light.png */; };
-		D4E2C9DA2F40493B009F2132 /* icon_cartoon_smooth_final_dark.png in Resources */ = {isa = PBXBuildFile; fileRef = D4E2C9D72F40493B009F2132 /* icon_cartoon_smooth_final_dark.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,8 +39,6 @@
 		AA00002A0000000000000001 /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 		AA00002C0000000000000001 /* AddNoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddNoteView.swift; sourceTree = "<group>"; };
 		AA0000300000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		D4E2C9D72F40493B009F2132 /* icon_cartoon_smooth_final_dark.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon_cartoon_smooth_final_dark.png; sourceTree = "<group>"; };
-		D4E2C9D82F40493B009F2132 /* icon_cartoon_smooth_final_light.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon_cartoon_smooth_final_light.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,8 +69,6 @@
 				AA00001B0000000000000001 /* Views */,
 				AA00001C0000000000000001 /* Services */,
 				AA0000300000000000000001 /* Assets.xcassets */,
-				D4E2C9D72F40493B009F2132 /* icon_cartoon_smooth_final_dark.png */,
-				D4E2C9D82F40493B009F2132 /* icon_cartoon_smooth_final_light.png */,
 			);
 			path = SmartReminder;
 			sourceTree = "<group>";
@@ -186,8 +180,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0000310000000000000001 /* Assets.xcassets in Resources */,
-				D4E2C9D92F40493B009F2132 /* icon_cartoon_smooth_final_light.png in Resources */,
-				D4E2C9DA2F40493B009F2132 /* icon_cartoon_smooth_final_dark.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -347,10 +339,11 @@
 				DEVELOPMENT_TEAM = 75K889S8DL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "牛马提醒";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation_ImageName = icon_cartoon_smooth_final_light;
+				INFOPLIST_KEY_UILaunchScreen_Generation_ImageName = NiumaLogo;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -378,10 +371,11 @@
 				DEVELOPMENT_TEAM = 75K889S8DL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "牛马提醒";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation_ImageName = icon_cartoon_smooth_final_light;
+				INFOPLIST_KEY_UILaunchScreen_Generation_ImageName = NiumaLogo;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
