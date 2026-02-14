@@ -463,7 +463,6 @@ struct CalendarMonthView: View {
                             .font(.subheadline.weight(.semibold))
                             .frame(width: 32, height: 32)
                     }
-                    .disabled(isBeforeMin(selectedMonth))
                     
                     Spacer()
                     
@@ -480,10 +479,23 @@ struct CalendarMonthView: View {
                             .font(.subheadline.weight(.semibold))
                             .frame(width: 32, height: 32)
                     }
-                    .disabled(isAfterMax(selectedMonth))
                 }
                 .padding(.horizontal)
                 .padding(.top, 8)
+                
+                HStack {
+                    Spacer()
+                    Button("今天") {
+                        jumpToToday()
+                    }
+                    .font(.caption)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color.blue.opacity(0.12))
+                    .clipShape(Capsule())
+                }
+                .padding(.horizontal)
+                .padding(.top, 2)
                 
                 HStack {
                     ForEach(["一", "二", "三", "四", "五", "六", "日"], id: \.self) { day in
@@ -592,12 +604,26 @@ struct CalendarMonthView: View {
     private func shiftMonth(_ offset: Int) {
         guard let nextMonth = calendar.date(byAdding: .month, value: offset, to: selectedMonth) else { return }
         let normalized = calendar.date(from: calendar.dateComponents([.year, .month], from: nextMonth)) ?? nextMonth
-        if isBeforeMin(normalized) || isAfterMax(normalized) {
-            return
+        let target: Date
+        if isBeforeMin(normalized) {
+            target = maxMonth
+        } else if isAfterMax(normalized) {
+            target = minMonth
+        } else {
+            target = normalized
         }
+        withAnimation {
+            selectedMonth = target
+        }
+    }
+    
+    private func jumpToToday() {
+        let today = Date()
+        let normalized = calendar.date(from: calendar.dateComponents([.year, .month], from: today)) ?? today
         withAnimation {
             selectedMonth = normalized
         }
+        selectDay(today)
     }
     
     private func isBeforeMin(_ date: Date) -> Bool {
@@ -678,16 +704,16 @@ struct DayCell: View {
             
             if let festival = lunarInfo.festival {
                 Text(festival)
-                    .font(.system(size: 8, weight: .semibold))
+                    .font(.system(size: 9, weight: .semibold))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, 5)
                     .padding(.vertical, 1)
                     .background(Color.red.opacity(0.9))
                     .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
                     .lineLimit(1)
             } else {
                 Text(lunarInfo.lunarText)
-                    .font(.system(size: 8))
+                    .font(.system(size: 9))
                     .foregroundColor(lunarTextColor)
                     .lineLimit(1)
             }
