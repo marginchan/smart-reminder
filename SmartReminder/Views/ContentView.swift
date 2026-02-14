@@ -73,27 +73,58 @@ struct CalendarWeekView: View {
     @ObservedObject var store: ReminderStore
     @State private var expandedDates: Set<Date> = []
     @State private var showingMonthCalendar = false
+    @State private var visibleDates: [Date] = []
+    
+    private let calendar = Calendar.current
+    private let topAnchorID = "calendarTopAnchor"
     
     init(store: ReminderStore) {
         self.store = store
         let today = Calendar.current.startOfDay(for: Date())
         self._expandedDates = State(initialValue: [today])
+        self._visibleDates = State(initialValue: CalendarWeekView.makeDates(from: today, days: 14))
     }
     
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 20) {
-                ForEach(0..<7, id: \.self) { dayOffset in
-                    if let date = Calendar.current.date(byAdding: .day, value: dayOffset, to: Date()) {
+        ScrollViewReader { proxy in
+            ScrollView {
+                Color.clear
+                    .frame(height: 1)
+                    .id(topAnchorID)
+                
+                LazyVStack(spacing: 20) {
+                    ForEach(visibleDates, id: \.self) { date in
                         DaySectionView(date: date, store: store, isExpanded: binding(for: date))
+                            .onAppear {
+                                if date == visibleDates.last {
+                                    loadMoreDays()
+                                }
+                            }
                     }
                 }
+                .padding()
+                .padding(.bottom, 80)
             }
-            .padding()
-            .padding(.bottom, 80)
+            .background(Color.appSystemBackground)
+            .overlay(alignment: .bottomTrailing) {
+                Button {
+                    withAnimation {
+                        proxy.scrollTo(topAnchorID, anchor: .top)
+                    }
+                } label: {
+                    Image(systemName: "arrow.up")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(width: 40, height: 40)
+                        .background(Color.blue)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
+                }
+                .padding(.trailing, 16)
+                .padding(.bottom, 24)
+            }
         }
-        .background(Color.appSystemBackground)
-        .navigationTitle("未来7天")
+        .navigationTitle("日历")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: { showingMonthCalendar = true }) {
@@ -108,7 +139,7 @@ struct CalendarWeekView: View {
     }
     
     private func binding(for date: Date) -> Binding<Bool> {
-        let startOfDay = Calendar.current.startOfDay(for: date)
+        let startOfDay = calendar.startOfDay(for: date)
         return Binding(
             get: { expandedDates.contains(startOfDay) },
             set: { isExpanded in
@@ -119,6 +150,23 @@ struct CalendarWeekView: View {
                 }
             }
         )
+    }
+    
+    private static func makeDates(from start: Date, days: Int) -> [Date] {
+        guard days > 0 else { return [] }
+        let calendar = Calendar.current
+        return (0..<days).compactMap { calendar.date(byAdding: .day, value: $0, to: start) }
+    }
+    
+    private func loadMoreDays() {
+        guard let lastDate = visibleDates.last else { return }
+        let maxDate = calendar.date(byAdding: .year, value: 1, to: calendar.startOfDay(for: Date())) ?? lastDate
+        let nextDate = calendar.date(byAdding: .day, value: 1, to: lastDate) ?? lastDate
+        guard nextDate <= maxDate else { return }
+        let remainingDays = calendar.dateComponents([.day], from: nextDate, to: maxDate).day ?? 0
+        let batch = min(14, remainingDays + 1)
+        let more = CalendarWeekView.makeDates(from: nextDate, days: batch)
+        visibleDates.append(contentsOf: more)
     }
 }
 
@@ -134,16 +182,31 @@ struct DaySectionView: View {
     }
     
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             Button(action: { withAnimation(.spring()) { isExpanded.toggle() } }) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(formatWeekday(date))
                             .font(.headline)
                             .foregroundColor(isToday ? .blue : .primary)
-                        Text(formatDate(date))
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                        HStack(spacing: 6) {
+                            Text(formatDate(date))
+                                .font(.callout)
+                                .foregroundColor(.secondary)
+                            if let festival = lunarInfo.festival {
+                                Text(festival)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 2)
+                                    .background(Color.red.opacity(0.9))
+                                    .clipShape(Capsule())
+                            } else {
+                                Text(lunarInfo.lunarText)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
                     }
                     
                     Spacer()
@@ -168,9 +231,10 @@ struct DaySectionView: View {
                         .foregroundColor(.secondary)
                         .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 }
-                .padding()
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
                 .background(Color.appSecondarySystemBackground)
-                .cornerRadius(16)
+                .cornerRadius(14)
                 .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
             }
             .buttonStyle(PlainButtonStyle())
@@ -195,6 +259,10 @@ struct DaySectionView: View {
     }
     
     private var isToday: Bool { Calendar.current.isDateInToday(date) }
+    
+    private var lunarInfo: LunarFestivalInfo {
+        LunarFestivalService.shared.info(for: date)
+    }
     
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
