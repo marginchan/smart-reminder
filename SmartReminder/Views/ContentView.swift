@@ -215,59 +215,70 @@ struct LaunchScreenView: View {
     @State private var isActive = false
     @State private var opacity = 0.5
     @State private var scale = 0.8
-    @State private var shimmerPhase: CGFloat = 0
+    @State private var shimmerPosition: CGFloat = -0.5
     
     var body: some View {
         ZStack {
             if isActive {
                 ContentView()
             } else {
-                VStack(spacing: 20) {
+                VStack(spacing: 24) {
                     NiumaLogoView(size: 150)
                         .scaleEffect(scale)
                     
-                    VStack(spacing: 8) {
+                    VStack(spacing: 12) {
                         // 带光影效果的标题
-                        Text("牛马提醒")
-                            .font(.system(size: 40, weight: .bold, design: .rounded))
-                            .foregroundColor(.primary)
-                            .background(
-                                GeometryReader { geometry in
-                                    // 光影层
-                                    LinearGradient(
-                                        gradient: Gradient(stops: [
-                                            .init(color: .clear, location: 0),
-                                            .init(color: .white.opacity(0.7), location: 0.5),
-                                            .init(color: .clear, location: 1)
-                                        ]),
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                    .frame(width: geometry.size.width * 0.3)
-                                    .offset(x: -geometry.size.width * 0.3 + CGFloat(shimmerPhase) * geometry.size.width * 1.6)
-                                    .mask(
-                                        Text("牛马提醒")
-                                            .font(.system(size: 40, weight: .bold, design: .rounded))
-                                    )
-                                }
-                            )
+                        ZStack {
+                            // 底层文字
+                            Text("牛马提醒")
+                                .font(.system(size: 42, weight: .heavy, design: .rounded))
+                                .foregroundColor(.primary)
+                            
+                            // 光影层 - 更明显的效果
+                            Text("牛马提醒")
+                                .font(.system(size: 42, weight: .heavy, design: .rounded))
+                                .foregroundColor(.white)
+                                .mask(
+                                    Rectangle()
+                                        .fill(
+                                            LinearGradient(
+                                                stops: [
+                                                    .init(color: .clear, location: 0),
+                                                    .init(color: .clear, location: 0.3),
+                                                    .init(color: .white, location: 0.5),
+                                                    .init(color: .clear, location: 0.7),
+                                                    .init(color: .clear, location: 1)
+                                                ],
+                                                startPoint: UnitPoint(x: 0, y: 0.5),
+                                                endPoint: UnitPoint(x: 1, y: 0.5)
+                                            )
+                                        )
+                                        .rotationEffect(.degrees(20))
+                                        .frame(width: 150, height: 80)
+                                        .offset(x: shimmerPosition * 200, y: 0)
+                                )
+                                .blendMode(.hardLight)
+                        }
                         
                         Text("打工人自己的第二大脑")
-                            .font(.subheadline)
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
                             .foregroundColor(.secondary)
-                            .tracking(4)
+                            .tracking(3)
                     }
                 }
                 .opacity(opacity)
                 .onAppear {
+                    // 图标缩放动画
                     withAnimation(.easeIn(duration: 1.2)) {
                         self.opacity = 1.0
                         self.scale = 1.0
                     }
                     
-                    // 光影从左到右动画
-                    withAnimation(.linear(duration: 2.0).repeatForever(autoreverses: false)) {
-                        shimmerPhase = 1.0
+                    // 光影从左到右扫过
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        withAnimation(.easeInOut(duration: 1.0)) {
+                            shimmerPosition = 2.0
+                        }
                     }
                     
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
