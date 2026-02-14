@@ -16,9 +16,9 @@ struct ReminderListView: View {
             Section {
                 VStack(spacing: 16) {
                     // 品牌 Logo
-                    HStack {
+                    HStack(alignment: .center) {
                         NiumaLogoView(size: 60)
-                        VStack(alignment: .leading) {
+                        VStack(alignment: .leading, spacing: 2) {
                             Text("牛马提醒")
                                 .font(.system(size: 24, weight: .bold, design: .rounded))
                             Text("打工人的智能助手")
@@ -27,7 +27,6 @@ struct ReminderListView: View {
                         }
                         Spacer()
                     }
-                    .padding(.top, 10)
                     
                     // 搜索栏
                     searchBar
@@ -108,7 +107,6 @@ struct ReminderListView: View {
         }
         .listStyle(.plain)
         .background(Color.appSystemBackground)
-        .navigationTitle("牛马提醒")
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button(action: { showingCategoryManagement = true }) {
@@ -146,7 +144,6 @@ struct ReminderListView: View {
         .padding(10)
         .background(Color.appSecondarySystemBackground)
         .cornerRadius(10)
-        .padding(.horizontal)
         .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
     }
     

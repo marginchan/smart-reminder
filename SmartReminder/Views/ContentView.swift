@@ -215,6 +215,7 @@ struct LaunchScreenView: View {
     @State private var isActive = false
     @State private var opacity = 0.5
     @State private var scale = 0.8
+    @State private var shimmerPhase: CGFloat = 0
     
     var body: some View {
         ZStack {
@@ -226,9 +227,30 @@ struct LaunchScreenView: View {
                         .scaleEffect(scale)
                     
                     VStack(spacing: 8) {
+                        // 带光影效果的标题
                         Text("牛马提醒")
                             .font(.system(size: 40, weight: .bold, design: .rounded))
                             .foregroundColor(.primary)
+                            .background(
+                                GeometryReader { geometry in
+                                    // 光影层
+                                    LinearGradient(
+                                        gradient: Gradient(stops: [
+                                            .init(color: .clear, location: 0),
+                                            .init(color: .white.opacity(0.7), location: 0.5),
+                                            .init(color: .clear, location: 1)
+                                        ]),
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                    .frame(width: geometry.size.width * 0.3)
+                                    .offset(x: -geometry.size.width * 0.3 + CGFloat(shimmerPhase) * geometry.size.width * 1.6)
+                                    .mask(
+                                        Text("牛马提醒")
+                                            .font(.system(size: 40, weight: .bold, design: .rounded))
+                                    )
+                                }
+                            )
                         
                         Text("打工人自己的第二大脑")
                             .font(.subheadline)
@@ -242,6 +264,12 @@ struct LaunchScreenView: View {
                         self.opacity = 1.0
                         self.scale = 1.0
                     }
+                    
+                    // 光影从左到右动画
+                    withAnimation(.linear(duration: 2.0).repeatForever(autoreverses: false)) {
+                        shimmerPhase = 1.0
+                    }
+                    
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                         withAnimation { self.isActive = true }
                     }

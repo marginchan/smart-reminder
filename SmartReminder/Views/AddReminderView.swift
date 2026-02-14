@@ -15,6 +15,7 @@ struct AddReminderView: View {
     @State private var priority: Priority = .medium
     @State private var selectedCategory: ReminderCategory?
     @State private var repeatFrequency: RepeatFrequency = .never
+    @State private var showingAddCategory = false
     
     private var isValid: Bool {
         !title.isEmpty
@@ -53,54 +54,74 @@ struct AddReminderView: View {
                 }
                 
                 Section(header: Text("优先级")) {
-                    Picker("优先级", selection: $priority) {
-                        ForEach(Priority.allCases, id: \.self) { priority in
-                            HStack {
-                                Circle()
-                                    .fill(Color.fromHex( priority.color))
-                                    .frame(width: 10, height: 10)
-                                Text(priority.title)
+                    HStack(spacing: 12) {
+                        ForEach(Priority.allCases, id: \.self) { p in
+                            Button(action: { priority = p }) {
+                                HStack(spacing: 6) {
+                                    Circle()
+                                        .fill(Color.fromHex(p.color))
+                                        .frame(width: 10, height: 10)
+                                    Text(p.title)
+                                        .font(.subheadline)
+                                        .fontWeight(priority == p ? .semibold : .regular)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(priority == p ? Color.fromHex(p.color).opacity(0.15) : Color.gray.opacity(0.1))
+                                .foregroundColor(priority == p ? Color.fromHex(p.color) : .secondary)
+                                .cornerRadius(10)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(priority == p ? Color.fromHex(p.color) : Color.clear, lineWidth: 1.5)
+                                )
                             }
-                            .tag(priority)
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
-                    .pickerStyle(SegmentedPickerStyle())
                 }
                 
                 Section(header: Text("分类")) {
-                    if store.categories.isEmpty {
-                        Text("暂无分类")
-                            .foregroundColor(.secondary)
-                    } else {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 12) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            // 无分类选项
+                            CategoryChip(
+                                name: "无",
+                                color: "#8E8E93",
+                                icon: "tray",
+                                isSelected: selectedCategory == nil
+                            ) {
+                                selectedCategory = nil
+                            }
+                            
+                            // 分类列表
+                            ForEach(store.categories, id: \.id) { category in
                                 CategoryChip(
-                                    name: "无",
-                                    color: "#8E8E93",
-                                    icon: "xmark.circle.fill",
-                                    isSelected: selectedCategory == nil
+                                    name: category.name,
+                                    color: category.color,
+                                    icon: category.icon,
+                                    isSelected: selectedCategory?.id == category.id
                                 ) {
-                                    selectedCategory = nil
-                                }
-                                
-                                ForEach(store.categories, id: \.id) { category in
-                                    CategoryChip(
-                                        name: category.name,
-                                        color: category.color,
-                                        icon: category.icon,
-                                        isSelected: selectedCategory?.id == category.id
-                                    ) {
-                                        selectedCategory = category
-                                    }
+                                    selectedCategory = category
                                 }
                             }
-                            .padding(.vertical, 8)
+                            
+                            // 添加分类按钮
+                            Button(action: { showingAddCategory = true }) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.title2)
+                                    .foregroundColor(.blue)
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
+                        .padding(.vertical, 8)
                     }
                 }
             }
             .navigationTitle("新建提醒")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showingAddCategory) {
+                AddCategorySheet(store: store, selectedCategory: $selectedCategory)
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") {
@@ -158,6 +179,7 @@ struct EditReminderView: View {
     @State private var priority: Priority
     @State private var selectedCategory: ReminderCategory?
     @State private var repeatFrequency: RepeatFrequency
+    @State private var showingAddCategory = false
     
     init(reminder: Reminder, store: ReminderStore, isPresented: Binding<Bool>) {
         self.reminder = reminder
@@ -204,32 +226,46 @@ struct EditReminderView: View {
                 }
                 
                 Section(header: Text("优先级")) {
-                    Picker("优先级", selection: $priority) {
-                        ForEach(Priority.allCases, id: \.self) { priority in
-                            HStack {
-                                Circle()
-                                    .fill(Color.fromHex( priority.color))
-                                    .frame(width: 10, height: 10)
-                                Text(priority.title)
+                    HStack(spacing: 12) {
+                        ForEach(Priority.allCases, id: \.self) { p in
+                            Button(action: { priority = p }) {
+                                HStack(spacing: 6) {
+                                    Circle()
+                                        .fill(Color.fromHex(p.color))
+                                        .frame(width: 10, height: 10)
+                                    Text(p.title)
+                                        .font(.subheadline)
+                                        .fontWeight(priority == p ? .semibold : .regular)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(priority == p ? Color.fromHex(p.color).opacity(0.15) : Color.gray.opacity(0.1))
+                                .foregroundColor(priority == p ? Color.fromHex(p.color) : .secondary)
+                                .cornerRadius(10)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(priority == p ? Color.fromHex(p.color) : Color.clear, lineWidth: 1.5)
+                                )
                             }
-                            .tag(priority)
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
-                    .pickerStyle(SegmentedPickerStyle())
                 }
                 
                 Section(header: Text("分类")) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
+                            // 无分类选项
                             CategoryChip(
                                 name: "无",
                                 color: "#8E8E93",
-                                icon: "xmark.circle.fill",
+                                icon: "tray",
                                 isSelected: selectedCategory == nil
                             ) {
                                 selectedCategory = nil
                             }
                             
+                            // 分类列表
                             ForEach(store.categories, id: \.id) { category in
                                 CategoryChip(
                                     name: category.name,
@@ -240,6 +276,14 @@ struct EditReminderView: View {
                                     selectedCategory = category
                                 }
                             }
+                            
+                            // 添加分类按钮
+                            Button(action: { showingAddCategory = true }) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.title2)
+                                    .foregroundColor(.blue)
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
                         .padding(.vertical, 8)
                     }
@@ -260,6 +304,9 @@ struct EditReminderView: View {
             }
             .navigationTitle("编辑提醒")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showingAddCategory) {
+                AddCategorySheet(store: store, selectedCategory: $selectedCategory)
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") {
@@ -306,10 +353,105 @@ struct CategoryChip: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(isSelected ? Color.fromHex( color) : Color.gray.opacity(0.2))
+            .background(isSelected ? Color.fromHex(color) : Color.gray.opacity(0.2))
             .foregroundColor(isSelected ? .white : .primary)
             .cornerRadius(16)
         }
         .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// 新建分类弹窗
+struct AddCategorySheet: View {
+    @ObservedObject var store: ReminderStore
+    @Binding var selectedCategory: ReminderCategory?
+    @Environment(\.dismiss) var dismiss
+    
+    @State private var newCategoryName = ""
+    @State private var selectedColor = "#007AFF"
+    @State private var selectedIcon = "folder.fill"
+    
+    let availableColors = [
+        "#007AFF", "#34C759", "#FF9500", "#FF3B30",
+        "#5856D6", "#AF52DE", "#FF2D55", "#5AC8FA",
+        "#FFCC00", "#8E8E93"
+    ]
+    
+    let availableIcons = [
+        "folder.fill", "briefcase.fill", "person.fill", "cart.fill",
+        "heart.fill", "book.fill", "star.fill", "flag.fill",
+        "tag.fill", "bell.fill", "calendar", "house.fill",
+        "car.fill", "airplane", "gift.fill", "creditcard.fill"
+    ]
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section(header: Text("名称")) {
+                    TextField("分类名称", text: $newCategoryName)
+                }
+                
+                Section(header: Text("颜色")) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
+                        ForEach(availableColors, id: \.self) { color in
+                            Circle()
+                                .fill(Color.fromHex(color))
+                                .frame(width: 32, height: 32)
+                                .overlay(
+                                    Circle()
+                                        .stroke(selectedColor == color ? Color.primary : Color.clear, lineWidth: 2)
+                                )
+                                .onTapGesture {
+                                    selectedColor = color
+                                }
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+                
+                Section(header: Text("图标")) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 16) {
+                        ForEach(availableIcons, id: \.self) { icon in
+                            Image(systemName: icon)
+                                .font(.title2)
+                                .frame(width: 44, height: 44)
+                                .background(selectedIcon == icon ? Color.blue.opacity(0.2) : Color.gray.opacity(0.1))
+                                .foregroundColor(selectedIcon == icon ? .blue : .primary)
+                                .cornerRadius(8)
+                                .onTapGesture {
+                                    selectedIcon = icon
+                                }
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
+            .navigationTitle("新建分类")
+            .navigationBarTitleDisplayMode(.inline)
+            .presentationDetents([.medium, .large])
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") { dismiss() }
+                }
+                
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") {
+                        addCategory()
+                    }
+                    .disabled(newCategoryName.isEmpty)
+                }
+            }
+        }
+    }
+    
+    private func addCategory() {
+        let category = ReminderCategory(
+            name: newCategoryName,
+            color: selectedColor,
+            icon: selectedIcon
+        )
+        store.addCategory(category)
+        selectedCategory = category
+        dismiss()
     }
 }

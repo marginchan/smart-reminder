@@ -22,14 +22,26 @@ class ReminderStore: ObservableObject {
     private var modelContext: ModelContext?
     private var notificationManager = NotificationManager()
     
+    // 标记是否已初始化示例数据
+    private let hasInitializedSampleDataKey = "hasInitializedSampleData"
+    private var hasInitializedSampleData: Bool {
+        get { UserDefaults.standard.bool(forKey: hasInitializedSampleDataKey) }
+        set { UserDefaults.standard.set(newValue, forKey: hasInitializedSampleDataKey) }
+    }
+    
     func setupModelContext(_ context: ModelContext) {
         self.modelContext = context
         fetchReminders()
         fetchCategories()
         fetchNotes()
         initializeDefaultCategories()
-        seedDefaultData()
-        seedDefaultNotes()
+        
+        // 仅在首次安装时初始化示例数据
+        if !hasInitializedSampleData {
+            seedDefaultData()
+            seedDefaultNotes()
+            hasInitializedSampleData = true
+        }
     }
     
     // MARK: - Fetch
@@ -293,6 +305,17 @@ class ReminderStore: ObservableObject {
             result = result.filter { !$0.isCompleted }
         }
         
+        // 排除今天已逾期的提醒（这些在逾期列表显示）
+        result = result.filter { $0.dueDate >= Date() || $0.isCompleted }
+        
+        // 按时间排序：未完成的在前，最近的时间排在最上面
+        result.sort { r1, r2 in
+            if r1.isCompleted != r2.isCompleted {
+                return !r1.isCompleted
+            }
+            return r1.dueDate < r2.dueDate
+        }
+        
         return result
     }
     
@@ -312,7 +335,14 @@ class ReminderStore: ObservableObject {
     }
     
     var overdueReminders: [Reminder] {
-        return reminders.filter { $0.dueDate < Date() && !$0.isCompleted }
+        let calendar = Calendar.current
+        let today = Date()
+        // 只展示当天逾期的提醒
+        return reminders.filter {
+            calendar.isDate($0.dueDate, inSameDayAs: today) &&
+            $0.dueDate < today &&
+            !$0.isCompleted
+        }
     }
     
     // MARK: - Natural Language Processing

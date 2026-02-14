@@ -33,36 +33,35 @@ struct ReminderRowView: View {
                         .lineLimit(1)
                 }
                 
-                HStack {
+                // 分类标签（弱化）
+                if let category = reminder.category {
                     HStack(spacing: 4) {
-                        Image(systemName: "calendar")
-                        Text(formattedDate(reminder.dueDate))
+                        Image(systemName: category.icon)
+                        Text(category.name)
                     }
                     .font(.caption)
-                    .foregroundColor(isOverdue ? .red : .secondary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(isOverdue ? Color.red.opacity(0.1) : Color.gray.opacity(0.1))
+                    .background(Color.fromHex(category.color).opacity(0.1))
+                    .foregroundColor(Color.fromHex(category.color))
                     .cornerRadius(8)
-                    
-                    Spacer()
-                    
-                    if let category = reminder.category {
-                        HStack(spacing: 4) {
-                            Image(systemName: category.icon)
-                            Text(category.name)
-                        }
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.fromHex( category.color).opacity(0.1))
-                        .foregroundColor(Color.fromHex( category.color))
-                        .cornerRadius(8)
-                    }
                 }
             }
             .padding(.vertical, 16)
+            
+            Spacer()
+            
+            // 时间放右侧
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(formattedTime(reminder.dueDate))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(isOverdue ? .red : .primary)
+                Text(formattedDateShort(reminder.dueDate))
+                    .font(.caption)
+                    .foregroundColor(isOverdue ? .red : .secondary)
+            }
             .padding(.trailing, 16)
+            .padding(.top, 16)
         }
         .background(Color.appSecondarySystemBackground)
         .cornerRadius(16)
@@ -78,9 +77,9 @@ struct ReminderRowView: View {
     
     private var priorityColor: Color {
         switch reminder.priority {
-        case .low: return .green
-        case .medium: return .blue
-        case .high: return .red
+        case .low: return Color.fromHex("#8E8E93")     // 灰色
+        case .medium: return Color.fromHex("#007AFF")  // 蓝色
+        case .high: return Color.fromHex("#FF3B30")    // 红色
         }
     }
     
@@ -88,13 +87,21 @@ struct ReminderRowView: View {
         reminder.dueDate < Date() && !reminder.isCompleted
     }
     
-    private func formattedDate(_ date: Date) -> String {
+    private func formattedTime(_ date: Date) -> String {
         let formatter = DateFormatter()
-        if Calendar.current.isDateInToday(date) {
-            formatter.dateFormat = "HH:mm"
-            return "今天 " + formatter.string(from: date)
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
+    }
+    
+    private func formattedDateShort(_ date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) {
+            return "今天"
+        } else if calendar.isDateInTomorrow(date) {
+            return "明天"
         } else {
-            formatter.dateFormat = "MM-dd HH:mm"
+            let formatter = DateFormatter()
+            formatter.dateFormat = "M/d"
             return formatter.string(from: date)
         }
     }

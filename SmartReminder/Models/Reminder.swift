@@ -57,9 +57,9 @@ enum Priority: Int, Codable, CaseIterable {
     
     var color: String {
         switch self {
-        case .low: return "#34C759"
-        case .medium: return "#FF9500"
-        case .high: return "#FF3B30"
+        case .low: return "#8E8E93"      // 灰色
+        case .medium: return "#007AFF"   // 蓝色
+        case .high: return "#FF3B30"     // 红色
         }
     }
 }
