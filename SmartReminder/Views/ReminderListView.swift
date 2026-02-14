@@ -36,39 +36,7 @@ struct ReminderListView: View {
                 .listRowSeparator(.hidden)
             }
             
-            // 逾期任务
-            if !store.overdueReminders.isEmpty {
-                Section(header: Text("已逾期").foregroundColor(.red)) {
-                    ForEach(store.overdueReminders, id: \.id) { reminder in
-                        ReminderRowView(reminder: reminder, store: store)
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    withAnimation {
-                                        store.deleteReminder(reminder)
-                                    }
-                                } label: {
-                                    Label("删除", systemImage: "trash")
-                                }
-                            }
-                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                Button {
-                                    withAnimation {
-                                        store.toggleComplete(reminder)
-                                    }
-                                } label: {
-                                    Label("完成", systemImage: "checkmark")
-                                }
-                                .tint(.green)
-                            }
-                    }
-                }
-            }
-            
-            // 提醒列表
-            if store.filteredReminders.isEmpty {
+            if store.overdueReminders.isEmpty && store.filteredReminders.isEmpty {
                 Section {
                     emptyStateView
                         .listRowInsets(EdgeInsets())
@@ -76,31 +44,65 @@ struct ReminderListView: View {
                         .listRowSeparator(.hidden)
                 }
             } else {
-                Section(header: Text("提醒列表 (\(store.filteredReminders.count))").foregroundColor(.primary)) {
-                    ForEach(store.filteredReminders, id: \.id) { reminder in
-                        ReminderRowView(reminder: reminder, store: store)
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    withAnimation {
-                                        store.deleteReminder(reminder)
+                // 今日已逾期
+                if !store.overdueReminders.isEmpty {
+                    Section(header: Text("今日已逾期 (\(store.overdueReminders.count))").foregroundColor(.red)) {
+                        ForEach(store.overdueReminders, id: \.id) { reminder in
+                            ReminderRowView(reminder: reminder, store: store)
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button(role: .destructive) {
+                                        withAnimation {
+                                            store.deleteReminder(reminder)
+                                        }
+                                    } label: {
+                                        Label("删除", systemImage: "trash")
                                     }
-                                } label: {
-                                    Label("删除", systemImage: "trash")
                                 }
-                            }
-                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                Button {
-                                    withAnimation {
-                                        store.toggleComplete(reminder)
+                                .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                    Button {
+                                        withAnimation {
+                                            store.toggleComplete(reminder)
+                                        }
+                                    } label: {
+                                        Label("完成", systemImage: "checkmark")
                                     }
-                                } label: {
-                                    Label("完成", systemImage: "checkmark")
+                                    .tint(.green)
                                 }
-                                .tint(.green)
-                            }
+                        }
+                    }
+                }
+                
+                // 提醒列表（未来 1 年内）
+                if !store.filteredReminders.isEmpty {
+                    Section(header: Text("提醒列表 (\(store.filteredReminders.count))").foregroundColor(.primary)) {
+                        ForEach(store.filteredReminders, id: \.id) { reminder in
+                            ReminderRowView(reminder: reminder, store: store)
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button(role: .destructive) {
+                                        withAnimation {
+                                            store.deleteReminder(reminder)
+                                        }
+                                    } label: {
+                                        Label("删除", systemImage: "trash")
+                                    }
+                                }
+                                .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                    Button {
+                                        withAnimation {
+                                            store.toggleComplete(reminder)
+                                        }
+                                    } label: {
+                                        Label("完成", systemImage: "checkmark")
+                                    }
+                                    .tint(.green)
+                                }
+                        }
                     }
                 }
             }

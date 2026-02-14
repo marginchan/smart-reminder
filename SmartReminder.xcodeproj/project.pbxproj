@@ -20,6 +20,8 @@
 		AA0000270000000000000001 /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000280000000000000001 /* Note.swift */; };
 		AA0000290000000000000001 /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00002A0000000000000001 /* NotesView.swift */; };
 		AA00002B0000000000000001 /* AddNoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00002C0000000000000001 /* AddNoteView.swift */; };
+		AA0000330000000000000001 /* ToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000340000000000000001 /* ToastView.swift */; };
+		AA0000350000000000000001 /* LunarFestivalService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000360000000000000001 /* LunarFestivalService.swift */; };
 		AA0000310000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000300000000000000001 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -38,6 +40,8 @@
 		AA0000280000000000000001 /* Note.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
 		AA00002A0000000000000001 /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 		AA00002C0000000000000001 /* AddNoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddNoteView.swift; sourceTree = "<group>"; };
+		AA0000340000000000000001 /* ToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastView.swift; sourceTree = "<group>"; };
+		AA0000360000000000000001 /* LunarFestivalService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LunarFestivalService.swift; sourceTree = "<group>"; };
 		AA0000300000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -109,6 +113,7 @@
 				AA0000120000000000000001 /* CategoryManagementView.swift */,
 				AA00002A0000000000000001 /* NotesView.swift */,
 				AA00002C0000000000000001 /* AddNoteView.swift */,
+				AA0000340000000000000001 /* ToastView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -117,6 +122,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0000140000000000000001 /* NotificationManager.swift */,
+				AA0000360000000000000001 /* LunarFestivalService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -203,6 +209,8 @@
 				AA0000270000000000000001 /* Note.swift in Sources */,
 				AA0000290000000000000001 /* NotesView.swift in Sources */,
 				AA00002B0000000000000001 /* AddNoteView.swift in Sources */,
+				AA0000330000000000000001 /* ToastView.swift in Sources */,
+				AA0000350000000000000001 /* LunarFestivalService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

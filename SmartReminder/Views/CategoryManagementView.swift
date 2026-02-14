@@ -6,6 +6,8 @@ struct CategoryManagementView: View {
     @State private var newCategoryName = ""
     @State private var selectedColor = "#007AFF"
     @State private var selectedIcon = "folder.fill"
+    @State private var showToast = false
+    @State private var toastMessage = ""
     
     let availableColors = [
         "#007AFF", "#34C759", "#FF9500", "#FF3B30",
@@ -21,24 +23,32 @@ struct CategoryManagementView: View {
     ]
     
     var body: some View {
-        List {
-            Section(header: Text("我的分类")) {
-                if store.categories.isEmpty {
-                    ContentUnavailableView {
-                        Label("暂无分类", systemImage: "folder.badge.questionmark")
-                    } description: {
-                        Text("点击右上角添加新分类")
-                    }
-                } else {
-                    ForEach(store.categories, id: \.id) { category in
-                        NavigationLink {
-                            CategoryDetailView(category: category, store: store)
-                        } label: {
-                            CategoryRowView(category: category, store: store)
+        ZStack(alignment: .top) {
+            List {
+                Section(header: Text("我的分类")) {
+                    if store.categories.isEmpty {
+                        ContentUnavailableView {
+                            Label("暂无分类", systemImage: "folder.badge.questionmark")
+                        } description: {
+                            Text("点击右上角添加新分类")
                         }
+                    } else {
+                        ForEach(store.categories, id: \.id) { category in
+                            NavigationLink {
+                                CategoryDetailView(category: category, store: store)
+                            } label: {
+                                CategoryRowView(category: category, store: store)
+                            }
+                        }
+                        .onDelete(perform: deleteCategories)
                     }
-                    .onDelete(perform: deleteCategories)
                 }
+            }
+            
+            if showToast {
+                ToastView(message: toastMessage, isShowing: $showToast)
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .navigationTitle("分类管理")
@@ -114,11 +124,18 @@ struct CategoryManagementView: View {
     }
     
     private func deleteCategories(at offsets: IndexSet) {
+        var shouldShowToast = false
         for index in offsets {
+            guard index < store.categories.count else { continue }
             let category = store.categories[index]
-            if category.name != "默认" {
-                store.deleteCategory(category)
+            if category.name == "默认" {
+                shouldShowToast = true
+                continue
             }
+            store.deleteCategory(category)
+        }
+        if shouldShowToast {
+            showToast(message: "默认分类不可删除")
         }
     }
     
@@ -131,6 +148,13 @@ struct CategoryManagementView: View {
         store.addCategory(category)
         showingAddCategory = false
         resetForm()
+    }
+    
+    private func showToast(message: String) {
+        toastMessage = message
+        withAnimation {
+            showToast = true
+        }
     }
     
     private func resetForm() {

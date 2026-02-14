@@ -129,9 +129,10 @@ struct AddReminderView: View {
             }
         }
         .onAppear {
-            if selectedCategory == nil {
-                selectedCategory = store.categories.first { $0.name == "默认" }
-            }
+            applyDefaultCategory()
+        }
+        .onChange(of: store.categories) { _ in
+            applyDefaultCategory()
         }
     }
     
@@ -146,6 +147,12 @@ struct AddReminderView: View {
         )
         store.addReminder(reminder)
         isPresented = false
+    }
+    
+    private func applyDefaultCategory() {
+        if selectedCategory == nil {
+            selectedCategory = store.categories.first { $0.name == "默认" }
+        }
     }
     
     private func parseTitle() {

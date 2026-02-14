@@ -310,8 +310,10 @@ class ReminderStore: ObservableObject {
             result = result.filter { !$0.isCompleted }
         }
         
-        // 排除今天已逾期的提醒（这些在逾期列表显示）
-        result = result.filter { $0.dueDate >= Date() || $0.isCompleted }
+        // 仅展示未来 1 年内的提醒（首页提醒列表）
+        let now = Date()
+        let oneYearLater = Calendar.current.date(byAdding: .year, value: 1, to: now) ?? now
+        result = result.filter { $0.dueDate >= now && $0.dueDate <= oneYearLater }
         
         // 按时间排序：未完成的在前，最近的时间排在最上面
         result.sort { r1, r2 in
@@ -326,9 +328,16 @@ class ReminderStore: ObservableObject {
     
     var todayReminders: [Reminder] {
         let calendar = Calendar.current
-        return reminders.filter {
-            calendar.isDate($0.dueDate, inSameDayAs: Date()) && !$0.isCompleted
+        var result = reminders.filter { reminder in
+            calendar.isDate(reminder.dueDate, inSameDayAs: Date()) && (showCompleted || !reminder.isCompleted)
         }
+        result.sort { r1, r2 in
+            if r1.isCompleted != r2.isCompleted {
+                return !r1.isCompleted
+            }
+            return r1.dueDate < r2.dueDate
+        }
+        return result
     }
     
     var upcomingReminders: [Reminder] {
@@ -434,13 +443,63 @@ class ReminderStore: ObservableObject {
     // MARK: - Filtered Notes
     
     var filteredNotes: [Note] {
-        if noteSearchText.isEmpty {
+        let text = noteSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if text.isEmpty {
             return notes
         }
-        return notes.filter {
-            $0.title.localizedCaseInsensitiveContains(noteSearchText) ||
-            $0.content.localizedCaseInsensitiveContains(noteSearchText)
+        let dateRange = noteSearchDateRange(from: text)
+        return notes.filter { note in
+            let matchesText = note.title.localizedCaseInsensitiveContains(text) ||
+                note.content.localizedCaseInsensitiveContains(text)
+            let matchesDate = dateRange.map { range in
+                range.contains(note.updatedAt) || range.contains(note.createdAt)
+            } ?? false
+            return matchesText || matchesDate
         }
+    }
+    
+    private func noteSearchDateRange(from text: String) -> ClosedRange<Date>? {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        if text.contains("今天") {
+            return dayRange(for: now)
+        }
+        if text.contains("昨天") {
+            guard let date = calendar.date(byAdding: .day, value: -1, to: now) else { return nil }
+            return dayRange(for: date)
+        }
+        if text.contains("前天") {
+            guard let date = calendar.date(byAdding: .day, value: -2, to: now) else { return nil }
+            return dayRange(for: date)
+        }
+        if text.contains("本周") {
+            return calendar.dateInterval(of: .weekOfYear, for: now).map { $0.start...$0.end }
+        }
+        if text.contains("上周") {
+            guard let lastWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: now) else { return nil }
+            return calendar.dateInterval(of: .weekOfYear, for: lastWeek).map { $0.start...$0.end }
+        }
+        if text.contains("本月") {
+            return calendar.dateInterval(of: .month, for: now).map { $0.start...$0.end }
+        }
+        if text.contains("上个月") {
+            guard let lastMonth = calendar.date(byAdding: .month, value: -1, to: now) else { return nil }
+            return calendar.dateInterval(of: .month, for: lastMonth).map { $0.start...$0.end }
+        }
+        
+        let parsed = parseNaturalLanguage(text)
+        if let date = parsed.dueDate {
+            return dayRange(for: date)
+        }
+        return nil
+    }
+    
+    private func dayRange(for date: Date) -> ClosedRange<Date> {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: date)
+        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? date
+        return start...end
     }
     
     // MARK: - Seed Default Notes

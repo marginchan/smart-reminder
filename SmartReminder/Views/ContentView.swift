@@ -479,6 +479,18 @@ struct CalendarMonthView: View {
                     Button("关闭") { dismiss() }
                 }
             }
+            .onAppear {
+                if selectedDate == nil {
+                    selectDay(Date())
+                }
+            }
+            .onChange(of: store.reminders) { _ in
+                if let currentSelected = selectedDate {
+                    selectedDayReminders = store.reminders.filter {
+                        Calendar.current.isDate($0.dueDate, inSameDayAs: currentSelected)
+                    }
+                }
+            }
         }
     }
     
@@ -548,6 +560,14 @@ struct DayCell: View {
     
     var isToday: Bool { Calendar.current.isDateInToday(date) }
     
+    private var lunarInfo: LunarFestivalInfo {
+        LunarFestivalService.shared.info(for: date)
+    }
+    
+    private var lunarTextColor: Color {
+        lunarInfo.festival == nil ? .secondary : .red
+    }
+    
     var body: some View {
         VStack(spacing: 4) {
             Text("\(Calendar.current.component(.day, from: date))")
@@ -562,6 +582,11 @@ struct DayCell: View {
                         .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 1)
                 )
             
+            Text(lunarInfo.displayText)
+                .font(.system(size: 8, weight: lunarInfo.festival == nil ? .regular : .semibold))
+                .foregroundColor(lunarTextColor)
+                .lineLimit(1)
+            
             HStack(spacing: 3) {
                 if remindersCount > 0 {
                     Text("\(remindersCount)")
@@ -574,7 +599,7 @@ struct DayCell: View {
             }
             .frame(height: 12)
         }
-        .frame(height: 50)
+        .frame(height: 60)
         .contentShape(Rectangle())
     }
 }
