@@ -260,10 +260,37 @@ struct LaunchScreenView: View {
                                 .blendMode(.hardLight)
                         }
                         
-                        Text("打工人自己的第二大脑")
-                            .font(.system(size: 15, weight: .medium, design: .rounded))
-                            .foregroundColor(.secondary)
-                            .tracking(3)
+                        ZStack {
+                            Text("打工人的智能助手")
+                                .font(.system(size: 15, weight: .medium, design: .rounded))
+                                .foregroundColor(.secondary)
+                                .tracking(3)
+                            
+                            Text("打工人的智能助手")
+                                .font(.system(size: 15, weight: .medium, design: .rounded))
+                                .foregroundColor(.white)
+                                .tracking(3)
+                                .mask(
+                                    Rectangle()
+                                        .fill(
+                                            LinearGradient(
+                                                stops: [
+                                                    .init(color: .clear, location: 0),
+                                                    .init(color: .clear, location: 0.3),
+                                                    .init(color: .white, location: 0.5),
+                                                    .init(color: .clear, location: 0.7),
+                                                    .init(color: .clear, location: 1)
+                                                ],
+                                                startPoint: UnitPoint(x: 0, y: 0.5),
+                                                endPoint: UnitPoint(x: 1, y: 0.5)
+                                            )
+                                        )
+                                        .rotationEffect(.degrees(20))
+                                        .frame(width: 140, height: 40)
+                                        .offset(x: shimmerPosition * 160, y: 0)
+                                )
+                                .blendMode(.hardLight)
+                        }
                     }
                 }
                 .opacity(opacity)
