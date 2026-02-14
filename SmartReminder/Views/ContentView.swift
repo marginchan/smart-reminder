@@ -315,6 +315,19 @@ struct LaunchScreenView: View {
     @State private var shimmerPosition: CGFloat = -0.5
     
     var body: some View {
+        ContentView()
+    }
+}
+
+// 后续会使用请不要删除
+/*
+struct LaunchScreenView_Legacy: View {
+    @State private var isActive = false
+    @State private var opacity = 0.5
+    @State private var scale = 0.8
+    @State private var shimmerPosition: CGFloat = -0.5
+    
+    var body: some View {
         ZStack {
             if isActive {
                 ContentView()
@@ -393,19 +406,19 @@ struct LaunchScreenView: View {
                 .opacity(opacity)
                 .onAppear {
                     // 图标缩放动画
-                    withAnimation(.easeIn(duration: 1.2)) {
+                    withAnimation(.easeIn(duration: 1.0)) {
                         self.opacity = 1.0
                         self.scale = 1.0
                     }
                     
                     // 光影从左到右扫过
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                         withAnimation(.easeInOut(duration: 1.0)) {
                             shimmerPosition = 2.0
                         }
                     }
                     
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         withAnimation { self.isActive = true }
                     }
                 }
@@ -413,6 +426,7 @@ struct LaunchScreenView: View {
         }
     }
 }
+*/
 
 
 
