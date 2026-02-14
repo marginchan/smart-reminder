@@ -431,13 +431,60 @@ struct CalendarMonthView: View {
     @ObservedObject var store: ReminderStore
     @Environment(\.dismiss) var dismiss
     
-    @State private var selectedMonth = Date()
+    private let calendar = Calendar.current
+    @State private var baseMonth: Date
+    @State private var selectedMonth: Date
     @State private var selectedDayReminders: [Reminder] = []
     @State private var selectedDate: Date? = nil
+    
+    init(store: ReminderStore) {
+        self.store = store
+        let startOfMonth = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date())) ?? Date()
+        _baseMonth = State(initialValue: startOfMonth)
+        _selectedMonth = State(initialValue: startOfMonth)
+    }
+    
+    private var minMonth: Date {
+        calendar.date(byAdding: .month, value: -12, to: baseMonth) ?? baseMonth
+    }
+    
+    private var maxMonth: Date {
+        calendar.date(byAdding: .month, value: 12, to: baseMonth) ?? baseMonth
+    }
     
     var body: some View {
         NavigationStack {
             VStack {
+                HStack {
+                    Button {
+                        shiftMonth(-1)
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(width: 32, height: 32)
+                    }
+                    .disabled(isBeforeMin(selectedMonth))
+                    
+                    Spacer()
+                    
+                    Text(formatMonthYear(selectedMonth))
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Button {
+                        shiftMonth(1)
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(width: 32, height: 32)
+                    }
+                    .disabled(isAfterMax(selectedMonth))
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+                
                 HStack {
                     ForEach(["一", "二", "三", "四", "五", "六", "日"], id: \.self) { day in
                         Text(day)
@@ -448,15 +495,16 @@ struct CalendarMonthView: View {
                     }
                 }
                 .padding(.horizontal)
-                .padding(.top)
+                .padding(.top, 6)
                 
                 TabView(selection: $selectedMonth) {
                     ForEach(-12...12, id: \.self) { monthOffset in
-                        if let monthDate = Calendar.current.date(byAdding: .month, value: monthOffset, to: Date()) {
-                            MonthGridView(date: monthDate, store: store, selectedDate: selectedDate) { day in
+                        if let monthDate = calendar.date(byAdding: .month, value: monthOffset, to: baseMonth) {
+                            let normalized = calendar.date(from: calendar.dateComponents([.year, .month], from: monthDate)) ?? monthDate
+                            MonthGridView(date: normalized, store: store, selectedDate: selectedDate) { day in
                                 selectDay(day)
                             }
-                            .tag(monthDate)
+                            .tag(normalized)
                         }
                     }
                 }
@@ -499,7 +547,7 @@ struct CalendarMonthView: View {
             }
         .background(Color.appSystemBackground)
 
-            .navigationTitle(formatMonthYear(selectedMonth))
+            .navigationTitle("月历")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -539,6 +587,25 @@ struct CalendarMonthView: View {
         formatter.dateFormat = "M月d日 EEEE"
         formatter.locale = Locale(identifier: "zh_CN")
         return formatter.string(from: date)
+    }
+    
+    private func shiftMonth(_ offset: Int) {
+        guard let nextMonth = calendar.date(byAdding: .month, value: offset, to: selectedMonth) else { return }
+        let normalized = calendar.date(from: calendar.dateComponents([.year, .month], from: nextMonth)) ?? nextMonth
+        if isBeforeMin(normalized) || isAfterMax(normalized) {
+            return
+        }
+        withAnimation {
+            selectedMonth = normalized
+        }
+    }
+    
+    private func isBeforeMin(_ date: Date) -> Bool {
+        calendar.compare(date, to: minMonth, toGranularity: .month) == .orderedAscending
+    }
+    
+    private func isAfterMax(_ date: Date) -> Bool {
+        calendar.compare(date, to: maxMonth, toGranularity: .month) == .orderedDescending
     }
 }
 
@@ -609,10 +676,21 @@ struct DayCell: View {
                         .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 1)
                 )
             
-            Text(lunarInfo.displayText)
-                .font(.system(size: 8, weight: lunarInfo.festival == nil ? .regular : .semibold))
-                .foregroundColor(lunarTextColor)
-                .lineLimit(1)
+            if let festival = lunarInfo.festival {
+                Text(festival)
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(Color.red.opacity(0.9))
+                    .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+                    .lineLimit(1)
+            } else {
+                Text(lunarInfo.lunarText)
+                    .font(.system(size: 8))
+                    .foregroundColor(lunarTextColor)
+                    .lineLimit(1)
+            }
             
             HStack(spacing: 3) {
                 if remindersCount > 0 {

@@ -462,8 +462,23 @@ class ReminderStore: ObservableObject {
         let calendar = Calendar.current
         let now = Date()
         
+        if let dayRange = recentDaysRange(from: text, now: now) {
+            return dayRange
+        }
         if text.contains("今天") {
             return dayRange(for: now)
+        }
+        if text.contains("明天") {
+            guard let date = calendar.date(byAdding: .day, value: 1, to: now) else { return nil }
+            return dayRange(for: date)
+        }
+        if text.contains("后天") {
+            guard let date = calendar.date(byAdding: .day, value: 2, to: now) else { return nil }
+            return dayRange(for: date)
+        }
+        if text.contains("大后天") {
+            guard let date = calendar.date(byAdding: .day, value: 3, to: now) else { return nil }
+            return dayRange(for: date)
         }
         if text.contains("昨天") {
             guard let date = calendar.date(byAdding: .day, value: -1, to: now) else { return nil }
@@ -474,18 +489,39 @@ class ReminderStore: ObservableObject {
             return dayRange(for: date)
         }
         if text.contains("本周") {
-            return calendar.dateInterval(of: .weekOfYear, for: now).map { $0.start...$0.end }
+            return calendar.dateInterval(of: .weekOfYear, for: now).map { closedRange(from: $0) }
         }
         if text.contains("上周") {
             guard let lastWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: now) else { return nil }
-            return calendar.dateInterval(of: .weekOfYear, for: lastWeek).map { $0.start...$0.end }
+            return calendar.dateInterval(of: .weekOfYear, for: lastWeek).map { closedRange(from: $0) }
+        }
+        if text.contains("下周") {
+            guard let nextWeek = calendar.date(byAdding: .weekOfYear, value: 1, to: now) else { return nil }
+            return calendar.dateInterval(of: .weekOfYear, for: nextWeek).map { closedRange(from: $0) }
         }
         if text.contains("本月") {
-            return calendar.dateInterval(of: .month, for: now).map { $0.start...$0.end }
+            return calendar.dateInterval(of: .month, for: now).map { closedRange(from: $0) }
         }
-        if text.contains("上个月") {
+        if text.contains("上个月") || text.contains("上月") {
             guard let lastMonth = calendar.date(byAdding: .month, value: -1, to: now) else { return nil }
-            return calendar.dateInterval(of: .month, for: lastMonth).map { $0.start...$0.end }
+            return calendar.dateInterval(of: .month, for: lastMonth).map { closedRange(from: $0) }
+        }
+        if text.contains("下个月") || text.contains("下月") {
+            guard let nextMonth = calendar.date(byAdding: .month, value: 1, to: now) else { return nil }
+            return calendar.dateInterval(of: .month, for: nextMonth).map { closedRange(from: $0) }
+        }
+        if text.contains("本年") || text.contains("今年") {
+            return calendar.dateInterval(of: .year, for: now).map { closedRange(from: $0) }
+        }
+        if text.contains("去年") {
+            guard let lastYear = calendar.date(byAdding: .year, value: -1, to: now) else { return nil }
+            return calendar.dateInterval(of: .year, for: lastYear).map { closedRange(from: $0) }
+        }
+        if text.contains("上半年") {
+            return halfYearRange(for: now, isFirstHalf: true)
+        }
+        if text.contains("下半年") {
+            return halfYearRange(for: now, isFirstHalf: false)
         }
         
         let parsed = parseNaturalLanguage(text)
@@ -495,11 +531,60 @@ class ReminderStore: ObservableObject {
         return nil
     }
     
+    private func recentDaysRange(from text: String, now: Date) -> ClosedRange<Date>? {
+        let patterns = ["近(\\d+)天", "最近(\\d+)天"]
+        for pattern in patterns {
+            if let regex = try? NSRegularExpression(pattern: pattern),
+               let match = regex.firstMatch(in: text, range: NSRange(location: 0, length: text.utf16.count)),
+               match.numberOfRanges > 1,
+               let range = Range(match.range(at: 1), in: text),
+               let days = Int(text[range]) {
+                let safeDays = max(1, min(days, 365))
+                let calendar = Calendar.current
+                let start = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -(safeDays - 1), to: now) ?? now)
+                let end = endOfDay(for: now)
+                return start...end
+            }
+        }
+        if text.contains("近一周") || text.contains("最近一周") {
+            return recentDaysRange(from: "近7天", now: now)
+        }
+        if text.contains("近一月") || text.contains("最近一月") {
+            return recentDaysRange(from: "近30天", now: now)
+        }
+        if text.contains("最近三天") {
+            return recentDaysRange(from: "近3天", now: now)
+        }
+        return nil
+    }
+    
+    private func halfYearRange(for now: Date, isFirstHalf: Bool) -> ClosedRange<Date>? {
+        let calendar = Calendar.current
+        let year = calendar.component(.year, from: now)
+        let startMonth = isFirstHalf ? 1 : 7
+        let endMonth = isFirstHalf ? 6 : 12
+        guard let startDate = calendar.date(from: DateComponents(year: year, month: startMonth, day: 1)),
+              let endDate = calendar.date(from: DateComponents(year: year, month: endMonth, day: 1)),
+              let endInterval = calendar.dateInterval(of: .month, for: endDate) else { return nil }
+        let end = endOfDay(for: endInterval.end.addingTimeInterval(-1))
+        return calendar.startOfDay(for: startDate)...end
+    }
+    
     private func dayRange(for date: Date) -> ClosedRange<Date> {
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: date)
-        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? date
+        let end = endOfDay(for: date)
         return start...end
+    }
+    
+    private func closedRange(from interval: DateInterval) -> ClosedRange<Date> {
+        interval.start...endOfDay(for: interval.end.addingTimeInterval(-1))
+    }
+    
+    private func endOfDay(for date: Date) -> Date {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: date)
+        return calendar.date(byAdding: .day, value: 1, to: start)?.addingTimeInterval(-1) ?? date
     }
     
     // MARK: - Seed Default Notes
