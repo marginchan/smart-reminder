@@ -29,6 +29,8 @@ struct ReminderListView: View {
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, alignment: .bottom)
+                .padding(.top, 12)
+                .padding(.bottom, -8)
                 .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
