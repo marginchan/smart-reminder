@@ -32,6 +32,7 @@ class ReminderCategory {
     }
     
     static let defaultCategories: [ReminderCategory] = [
+        ReminderCategory(name: "默认", color: "#8E8E93", icon: "tray.fill"),
         ReminderCategory(name: "工作", color: "#007AFF", icon: "briefcase.fill"),
         ReminderCategory(name: "个人", color: "#34C759", icon: "person.fill"),
         ReminderCategory(name: "购物", color: "#FF9500", icon: "cart.fill"),

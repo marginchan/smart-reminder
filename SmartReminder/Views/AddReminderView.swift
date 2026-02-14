@@ -83,16 +83,7 @@ struct AddReminderView: View {
                 Section(header: Text("分类")) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
-                            // 无分类选项
-                            CategoryChip(
-                                name: "无",
-                                color: "#8E8E93",
-                                icon: "tray",
-                                isSelected: selectedCategory == nil
-                            ) {
-                                selectedCategory = nil
-                            }
-                            
+
                             // 分类列表
                             ForEach(store.categories, id: \.id) { category in
                                 CategoryChip(
@@ -135,6 +126,11 @@ struct AddReminderView: View {
                     }
                     .disabled(!isValid)
                 }
+            }
+        }
+        .onAppear {
+            if selectedCategory == nil {
+                selectedCategory = store.categories.first { $0.name == "默认" }
             }
         }
     }
@@ -255,16 +251,6 @@ struct EditReminderView: View {
                 Section(header: Text("分类")) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
-                            // 无分类选项
-                            CategoryChip(
-                                name: "无",
-                                color: "#8E8E93",
-                                icon: "tray",
-                                isSelected: selectedCategory == nil
-                            ) {
-                                selectedCategory = nil
-                            }
-                            
                             // 分类列表
                             ForEach(store.categories, id: \.id) { category in
                                 CategoryChip(

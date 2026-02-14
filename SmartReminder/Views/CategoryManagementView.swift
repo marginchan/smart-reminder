@@ -116,7 +116,9 @@ struct CategoryManagementView: View {
     private func deleteCategories(at offsets: IndexSet) {
         for index in offsets {
             let category = store.categories[index]
-            store.deleteCategory(category)
+            if category.name != "默认" {
+                store.deleteCategory(category)
+            }
         }
     }
     

@@ -57,7 +57,12 @@ class ReminderStore: ObservableObject {
         guard let context = modelContext else { return }
         
         let descriptor = FetchDescriptor<ReminderCategory>()
-        categories = (try? context.fetch(descriptor)) ?? []
+        let fetched = (try? context.fetch(descriptor)) ?? []
+        categories = fetched.sorted { c1, c2 in
+            if c1.name == "默认" { return true }
+            if c2.name == "默认" { return false }
+            return c1.createdAt < c2.createdAt
+        }
     }
     
     func fetchNotes() {
@@ -132,8 +137,8 @@ class ReminderStore: ObservableObject {
     }
     
     private func initializeDefaultCategories() {
-        if categories.isEmpty {
-            for category in ReminderCategory.defaultCategories {
+        for category in ReminderCategory.defaultCategories {
+            if !categories.contains(where: { $0.name == category.name }) {
                 addCategory(category)
             }
         }
