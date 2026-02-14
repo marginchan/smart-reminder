@@ -8,14 +8,22 @@ import SwiftUI
 struct AddReminderView: View {
     @ObservedObject var store: ReminderStore
     @Binding var isPresented: Bool
+    var initialDate: Date? = nil
     
     @State private var title = ""
     @State private var notes = ""
-    @State private var dueDate = Date()
+    @State private var dueDate: Date
     @State private var priority: Priority = .medium
     @State private var selectedCategory: ReminderCategory?
     @State private var repeatFrequency: RepeatFrequency = .never
     @State private var showingAddCategory = false
+    
+    init(store: ReminderStore, isPresented: Binding<Bool>, initialDate: Date? = nil) {
+        self.store = store
+        self._isPresented = isPresented
+        self.initialDate = initialDate
+        self._dueDate = State(initialValue: initialDate ?? Date())
+    }
     
     private var isValid: Bool {
         !title.isEmpty
@@ -129,6 +137,9 @@ struct AddReminderView: View {
             }
         }
         .onAppear {
+            if let initialDate = initialDate {
+                dueDate = initialDate
+            }
             applyDefaultCategory()
         }
         .onChange(of: store.categories) { _ in

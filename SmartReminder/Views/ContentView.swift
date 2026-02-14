@@ -73,6 +73,8 @@ struct CalendarWeekView: View {
     @ObservedObject var store: ReminderStore
     @State private var expandedDates: Set<Date> = []
     @State private var showingMonthCalendar = false
+    @State private var showingAddReminder = false
+    @State private var selectedDateForAdd: Date? = nil
     @State private var visibleDates: [Date] = []
     
     private let calendar = Calendar.current
@@ -94,7 +96,13 @@ struct CalendarWeekView: View {
                 
                 LazyVStack(spacing: 20) {
                     ForEach(visibleDates, id: \.self) { date in
-                        DaySectionView(date: date, store: store, isExpanded: binding(for: date))
+                        DaySectionView(
+                            date: date,
+                            store: store,
+                            isExpanded: binding(for: date),
+                            showingAddReminder: $showingAddReminder,
+                            selectedDateForAdd: $selectedDateForAdd
+                        )
                             .onAppear {
                                 if date == visibleDates.last {
                                     loadMoreDays()
@@ -136,6 +144,9 @@ struct CalendarWeekView: View {
         .sheet(isPresented: $showingMonthCalendar) {
             CalendarMonthView(store: store)
         }
+        .sheet(isPresented: $showingAddReminder) {
+            AddReminderView(store: store, isPresented: $showingAddReminder, initialDate: selectedDateForAdd)
+        }
     }
     
     private func binding(for date: Date) -> Binding<Bool> {
@@ -174,6 +185,8 @@ struct DaySectionView: View {
     let date: Date
     @ObservedObject var store: ReminderStore
     @Binding var isExpanded: Bool
+    @Binding var showingAddReminder: Bool
+    @Binding var selectedDateForAdd: Date?
     
     var reminders: [Reminder] {
         store.reminders.filter {
@@ -240,6 +253,22 @@ struct DaySectionView: View {
             .buttonStyle(PlainButtonStyle())
             
             if isExpanded {
+                Button(action: {
+                    selectedDateForAdd = date
+                    showingAddReminder = true
+                }) {
+                    Label("添加提醒", systemImage: "plus.circle.fill")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.blue)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(8)
+                }
+                .padding(.horizontal, 14)
+                .padding(.bottom, 4)
+                
                 if reminders.isEmpty {
                     Text("享受美好的一天！")
                         .font(.caption)
@@ -504,6 +533,7 @@ struct CalendarMonthView: View {
     @State private var selectedMonth: Date
     @State private var selectedDayReminders: [Reminder] = []
     @State private var selectedDate: Date? = nil
+    @State private var showingAddReminder = false
     
     init(store: ReminderStore) {
         self.store = store
@@ -607,6 +637,20 @@ struct CalendarMonthView: View {
                             .padding(.horizontal)
                             .padding(.top)
                             
+                            Button(action: {
+                                showingAddReminder = true
+                            }) {
+                                Label("添加提醒", systemImage: "plus.circle.fill")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.blue)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                                    .background(Color.blue.opacity(0.1))
+                                    .cornerRadius(8)
+                            }
+                            .padding(.horizontal)
+                            
                             ForEach(selectedDayReminders) { reminder in
                                 ReminderRowView(reminder: reminder, store: store)
                                     .padding(.horizontal)
@@ -633,6 +677,9 @@ struct CalendarMonthView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("关闭") { dismiss() }
                 }
+            }
+            .sheet(isPresented: $showingAddReminder) {
+                AddReminderView(store: store, isPresented: $showingAddReminder, initialDate: selectedDate)
             }
             .onAppear {
                 if selectedDate == nil {
