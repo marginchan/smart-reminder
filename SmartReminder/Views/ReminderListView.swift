@@ -12,25 +12,24 @@ struct ReminderListView: View {
     
     var body: some View {
         List {
-            // 品牌 Logo & 搜索栏 Section
+            // 品牌 Logo Section
             Section {
-                VStack(spacing: 16) {
-                    // 品牌 Logo
-                    HStack(alignment: .center) {
-                        NiumaLogoView(size: 60)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("牛马提醒")
-                                .font(.system(size: 24, weight: .bold, design: .rounded))
-                            Text("打工人的智能助手")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
+                // 品牌 Logo
+                HStack(spacing: 12) {
+                    NiumaLogoView(size: 50)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("牛马提醒")
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                        Text("打工人的智能助手")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                     
-                    // 搜索栏
-                    searchBar
+                    Spacer()
                 }
+                .frame(maxWidth: .infinity, alignment: .bottom)
+                .padding(.bottom, 8)
                 .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
@@ -135,17 +134,7 @@ struct ReminderListView: View {
     
     // MARK: - Components
     
-    private var searchBar: some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.secondary)
-            TextField("搜索提醒 (支持智能语义)", text: $store.searchText)
-        }
-        .padding(10)
-        .background(Color.appSecondarySystemBackground)
-        .cornerRadius(10)
-        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
-    }
+
     
 
     
