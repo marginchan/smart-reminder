@@ -17,6 +17,7 @@ struct AddReminderView: View {
     @State private var selectedCategory: ReminderCategory?
     @State private var repeatFrequency: RepeatFrequency = .never
     @State private var showingAddCategory = false
+    @State private var showingDatePicker = false
     
     init(store: ReminderStore, isPresented: Binding<Bool>, initialDate: Date? = nil) {
         self.store = store
@@ -48,11 +49,17 @@ struct AddReminderView: View {
                 }
                 
                 Section(header: Text("时间")) {
-                    DatePicker(
-                        "提醒时间",
-                        selection: $dueDate,
-                        displayedComponents: [.date, .hourAndMinute]
-                    )
+                    Button {
+                        showingDatePicker = true
+                    } label: {
+                        HStack {
+                            Text("提醒时间")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Text(formatDate(dueDate))
+                                .foregroundColor(.secondary)
+                        }
+                    }
                     
                     Picker("重复", selection: $repeatFrequency) {
                         ForEach(RepeatFrequency.allCases, id: \.self) { frequency in
@@ -120,6 +127,9 @@ struct AddReminderView: View {
             .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showingAddCategory) {
                 AddCategorySheet(store: store, selectedCategory: $selectedCategory)
+            }
+            .sheet(isPresented: $showingDatePicker) {
+                CustomDatePickerSheet(date: $dueDate)
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -194,6 +204,7 @@ struct EditReminderView: View {
     @State private var selectedCategory: ReminderCategory?
     @State private var repeatFrequency: RepeatFrequency
     @State private var showingAddCategory = false
+    @State private var showingDatePicker = false
     
     init(reminder: Reminder, store: ReminderStore, isPresented: Binding<Bool>) {
         self.reminder = reminder
@@ -226,11 +237,17 @@ struct EditReminderView: View {
                 }
                 
                 Section(header: Text("时间")) {
-                    DatePicker(
-                        "提醒时间",
-                        selection: $dueDate,
-                        displayedComponents: [.date, .hourAndMinute]
-                    )
+                    Button {
+                        showingDatePicker = true
+                    } label: {
+                        HStack {
+                            Text("提醒时间")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Text(formatDate(dueDate))
+                                .foregroundColor(.secondary)
+                        }
+                    }
                     
                     Picker("重复", selection: $repeatFrequency) {
                         ForEach(RepeatFrequency.allCases, id: \.self) { frequency in
@@ -310,6 +327,9 @@ struct EditReminderView: View {
             .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showingAddCategory) {
                 AddCategorySheet(store: store, selectedCategory: $selectedCategory)
+            }
+            .sheet(isPresented: $showingDatePicker) {
+                CustomDatePickerSheet(date: $dueDate)
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -457,5 +477,167 @@ struct AddCategorySheet: View {
         store.addCategory(category)
         selectedCategory = category
         dismiss()
+    }
+}
+
+fileprivate func formatDate(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy年M月d日 HH:mm"
+    return formatter.string(from: date)
+}
+
+#if canImport(UIKit)
+import UIKit
+#endif
+
+struct CustomDatePickerSheet: View {
+    @Binding var date: Date
+    @Environment(\.dismiss) var dismiss
+    
+    @State private var selectedYear: Int
+    @State private var selectedMonth: Int
+    @State private var selectedDay: Int
+    @State private var selectedHour: Int
+    @State private var selectedMinute: Int
+    
+    private let calendar = Calendar.current
+    private let years = Array(2024...2035)
+    private let months = Array(1...12)
+    private let hours = Array(0...23)
+    private let minutes = Array(0...59)
+    
+    init(date: Binding<Date>) {
+        self._date = date
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date.wrappedValue)
+        
+        self._selectedYear = State(initialValue: components.year ?? 2024)
+        self._selectedMonth = State(initialValue: components.month ?? 1)
+        self._selectedDay = State(initialValue: components.day ?? 1)
+        self._selectedHour = State(initialValue: components.hour ?? 12)
+        self._selectedMinute = State(initialValue: components.minute ?? 0)
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Button("取消") {
+                    dismiss()
+                }
+                .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                Text("选择时间")
+                    .font(.headline)
+                
+                Spacer()
+                
+                Button("确定") {
+                    saveDate()
+                    dismiss()
+                }
+                .fontWeight(.bold)
+                .foregroundColor(.blue)
+            }
+            .padding()
+            #if canImport(UIKit)
+            .background(Color(UIColor.secondarySystemBackground))
+            #else
+            .background(Color.gray.opacity(0.1))
+            #endif
+            
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    Picker("Year", selection: $selectedYear) {
+                        ForEach(years, id: \.self) { year in
+                            Text("\(String(format: "%02d", year % 100))年").tag(year)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .frame(width: geometry.size.width * 0.19)
+                    .clipped()
+                    
+                    Picker("Month", selection: $selectedMonth) {
+                        ForEach(months, id: \.self) { month in
+                            Text("\(month)月").tag(month)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .frame(width: geometry.size.width * 0.19)
+                    .clipped()
+                    
+                    Picker("Day", selection: $selectedDay) {
+                        ForEach(daysInMonth, id: \.self) { day in
+                            Text("\(day)日").tag(day)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .frame(width: geometry.size.width * 0.19)
+                    .clipped()
+                    
+                    Picker("Hour", selection: $selectedHour) {
+                        ForEach(hours, id: \.self) { hour in
+                            Text("\(hour)时").tag(hour)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .frame(width: geometry.size.width * 0.19)
+                    .clipped()
+                    
+                    Picker("Minute", selection: $selectedMinute) {
+                        ForEach(minutes, id: \.self) { minute in
+                            Text("\(String(format: "%02d", minute))分").tag(minute)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .frame(width: geometry.size.width * 0.19)
+                    .clipped()
+                }
+            }
+            .frame(height: 200)
+            .padding(.vertical)
+        }
+        #if canImport(UIKit)
+        .background(Color(UIColor.systemBackground))
+        #else
+        .background(Color.white)
+        #endif
+        .presentationDetents([.height(300)])
+        .onChange(of: selectedMonth) { _ in adjustDaySelection() }
+        .onChange(of: selectedYear) { _ in adjustDaySelection() }
+    }
+    
+    private var daysInMonth: [Int] {
+        var components = DateComponents()
+        components.year = selectedYear
+        components.month = selectedMonth
+        components.day = 1
+        
+        guard let date = calendar.date(from: components),
+              let range = calendar.range(of: .day, in: .month, for: date) else {
+            return Array(1...30)
+        }
+        return Array(range)
+    }
+    
+    private func adjustDaySelection() {
+        let count = daysInMonth.count
+        if selectedDay > count {
+            selectedDay = count
+        }
+    }
+    
+    private func saveDate() {
+        var components = DateComponents()
+        components.year = selectedYear
+        components.month = selectedMonth
+        components.day = selectedDay
+        components.hour = selectedHour
+        components.minute = selectedMinute
+        
+        if let newDate = calendar.date(from: components) {
+            date = newDate
+        }
     }
 }
