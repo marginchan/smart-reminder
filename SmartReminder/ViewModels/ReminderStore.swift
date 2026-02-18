@@ -329,8 +329,9 @@ class ReminderStore: ObservableObject {
         // 完成状态过滤 - 首页不显示已完成的提醒
         result = result.filter { !$0.isCompleted }
         
-        // 仅展示从今天起未来 1 年内的提醒（首页提醒列表）
-        let now = Calendar.current.startOfDay(for: Date())
+        // 仅展示当前时间之后、未来 1 年内的提醒（首页提醒列表）
+        // 当天已逾期的提醒由 overdueReminders 单独展示，这里不重复
+        let now = Date()
         let oneYearLater = Calendar.current.date(byAdding: .year, value: 1, to: now) ?? now
         result = result.filter { $0.dueDate >= now && $0.dueDate <= oneYearLater }
         

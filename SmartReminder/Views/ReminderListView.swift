@@ -57,17 +57,18 @@ struct ReminderListView: View {
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
                                         reminderToDelete = reminder
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                                            showingDeleteAlert = true
-                                        }
+                                        showingDeleteAlert = true
                                     } label: {
                                         Label("删除", systemImage: "trash")
                                     }
                                 }
                                 .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                     Button {
-                                        withAnimation {
-                                            store.toggleComplete(reminder)
+                                        // 延迟完成，让滑动动画先回弹再消失
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                            withAnimation(.easeOut(duration: 0.3)) {
+                                                store.toggleComplete(reminder)
+                                            }
                                         }
                                     } label: {
                                         Label("完成", systemImage: "checkmark")
@@ -89,17 +90,17 @@ struct ReminderListView: View {
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
                                         reminderToDelete = reminder
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                                            showingDeleteAlert = true
-                                        }
+                                        showingDeleteAlert = true
                                     } label: {
                                         Label("删除", systemImage: "trash")
                                     }
                                 }
                                 .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                     Button {
-                                        withAnimation {
-                                            store.toggleComplete(reminder)
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                            withAnimation(.easeOut(duration: 0.3)) {
+                                                store.toggleComplete(reminder)
+                                            }
                                         }
                                     } label: {
                                         Label("完成", systemImage: "checkmark")
