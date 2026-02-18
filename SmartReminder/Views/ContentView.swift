@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 #if canImport(UIKit)
 import UIKit
@@ -309,11 +310,6 @@ struct DaySectionView: View {
 }
 
 struct LaunchScreenView: View {
-    @State private var isActive = false
-    @State private var opacity = 0.5
-    @State private var scale = 0.8
-    @State private var shimmerPosition: CGFloat = -0.5
-    
     var body: some View {
         ContentView()
     }
@@ -436,6 +432,7 @@ struct SettingsView: View {
     @AppStorage("appTheme") private var appTheme: AppTheme = .system
     @AppStorage("remindersEnabled") private var remindersEnabled = true
     @AppStorage("remindersPausedUntil") private var remindersPausedUntil: Double = 0
+    @State private var notificationStatus: String = "检查中..."
     
     var isPaused: Bool {
         !remindersEnabled && Date().timeIntervalSince1970 < remindersPausedUntil
@@ -446,11 +443,16 @@ struct SettingsView: View {
             Section(header: Text("提醒设置")) {
                 Toggle(remindersEnabled ? "提醒已开启" : "提醒已暂停", isOn: $remindersEnabled)
                     .tint(.green)
-                    .onChange(of: remindersEnabled) { newValue in
+                    .onChange(of: remindersEnabled) { oldValue, newValue in
                         if !newValue {
                             remindersPausedUntil = Date().addingTimeInterval(7 * 24 * 3600).timeIntervalSince1970
+                            // 实际取消所有待发送的通知
+                            NotificationManager.shared.cancelAllNotifications()
+                            NotificationManager.shared.clearBadge()
                         } else {
                             remindersPausedUntil = 0
+                            // 重新调度所有未完成提醒的通知
+                            store.rescheduleAllNotifications()
                         }
                     }
                 
@@ -484,10 +486,21 @@ struct SettingsView: View {
                 }
             }
             
+            Section(header: Text("通知状态")) {
+                HStack {
+                    Image(systemName: notificationStatus == "已授权" ? "bell.badge.fill" : "bell.slash.fill")
+                        .foregroundColor(notificationStatus == "已授权" ? .green : .red)
+                    Text("通知权限")
+                    Spacer()
+                    Text(notificationStatus)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
             Section(header: Text("显示选项")) {
                 Toggle("显示已完成提醒", isOn: $showCompleted)
-                    .onChange(of: showCompleted) {
-                        store.showCompleted = showCompleted
+                    .onChange(of: showCompleted) { oldValue, newValue in
+                        store.showCompleted = newValue
                     }
                 
                 Picker("主题模式", selection: $appTheme) {
@@ -503,10 +516,43 @@ struct SettingsView: View {
                     Spacer()
                     Text("1.0.0").foregroundColor(.secondary)
                 }
+                
+                Link(destination: URL(string: "https://example.com/privacy")!) {
+                    HStack {
+                        Text("隐私政策")
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
             }
         }
         .navigationTitle("设置")
-        .onAppear { store.showCompleted = showCompleted }
+        .onAppear {
+            store.showCompleted = showCompleted
+            checkNotificationStatus()
+        }
+    }
+    
+    private func checkNotificationStatus() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            DispatchQueue.main.async {
+                switch settings.authorizationStatus {
+                case .authorized:
+                    notificationStatus = "已授权"
+                case .denied:
+                    notificationStatus = "已拒绝"
+                case .notDetermined:
+                    notificationStatus = "未设置"
+                case .provisional:
+                    notificationStatus = "临时授权"
+                @unknown default:
+                    notificationStatus = "未知"
+                }
+            }
+        }
     }
     
     private var formattedPausedTime: String {
@@ -700,9 +746,9 @@ struct CalendarMonthView: View {
                     selectDay(Date())
                 }
             }
-            .onChange(of: store.reminders) { _ in
+            .onChange(of: store.reminders) { oldValue, newValue in
                 if let currentSelected = selectedDate {
-                    selectedDayReminders = store.reminders.filter {
+                    selectedDayReminders = newValue.filter {
                         Calendar.current.isDate($0.dueDate, inSameDayAs: currentSelected)
                     }
                 }

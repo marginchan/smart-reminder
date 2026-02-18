@@ -8,6 +8,8 @@ struct CategoryManagementView: View {
     @State private var selectedIcon = "folder.fill"
     @State private var showToast = false
     @State private var toastMessage = ""
+    @State private var categoryToDelete: ReminderCategory? = nil
+    @State private var showingDeleteAlert = false
     
     let availableColors = [
         "#007AFF", "#34C759", "#FF9500", "#FF3B30",
@@ -21,6 +23,10 @@ struct CategoryManagementView: View {
         "tag.fill", "bell.fill", "calendar", "house.fill",
         "car.fill", "airplane", "gift.fill", "creditcard.fill"
     ]
+    
+    private func remindersCount(for category: ReminderCategory) -> Int {
+        store.reminders.filter { $0.category?.id == category.id }.count
+    }
     
     var body: some View {
         ZStack(alignment: .top) {
@@ -60,7 +66,7 @@ struct CategoryManagementView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingAddCategory) {
+        .sheet(isPresented: $showingAddCategory, onDismiss: { resetForm() }) {
             NavigationStack {
                 Form {
                     Section(header: Text("名称")) {
@@ -108,7 +114,6 @@ struct CategoryManagementView: View {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("取消") {
                             showingAddCategory = false
-                            resetForm()
                         }
                     }
                     
@@ -121,21 +126,32 @@ struct CategoryManagementView: View {
                 }
             }
         }
+        .alert("确认删除分类", isPresented: $showingDeleteAlert, presenting: categoryToDelete) { category in
+            Button("取消", role: .cancel) { categoryToDelete = nil }
+            Button("删除", role: .destructive) {
+                store.deleteCategory(category)
+                categoryToDelete = nil
+            }
+        } message: { category in
+            let count = remindersCount(for: category)
+            if count > 0 {
+                Text("分类「\(category.name)」下有 \(count) 个提醒，删除后这些提醒将变为未分类。")
+            } else {
+                Text("确定要删除分类「\(category.name)」吗？")
+            }
+        }
     }
     
     private func deleteCategories(at offsets: IndexSet) {
-        var shouldShowToast = false
         for index in offsets {
             guard index < store.categories.count else { continue }
             let category = store.categories[index]
             if category.name == "默认" {
-                shouldShowToast = true
+                showToast(message: "默认分类不可删除")
                 continue
             }
-            store.deleteCategory(category)
-        }
-        if shouldShowToast {
-            showToast(message: "默认分类不可删除")
+            categoryToDelete = category
+            showingDeleteAlert = true
         }
     }
     
@@ -147,7 +163,6 @@ struct CategoryManagementView: View {
         )
         store.addCategory(category)
         showingAddCategory = false
-        resetForm()
     }
     
     private func showToast(message: String) {

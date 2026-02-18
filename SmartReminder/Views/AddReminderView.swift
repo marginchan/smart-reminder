@@ -152,7 +152,7 @@ struct AddReminderView: View {
             }
             applyDefaultCategory()
         }
-        .onChange(of: store.categories) { _ in
+        .onChange(of: store.categories) { oldValue, newValue in
             applyDefaultCategory()
         }
     }
@@ -604,8 +604,8 @@ struct CustomDatePickerSheet: View {
         .background(Color.white)
         #endif
         .presentationDetents([.height(300)])
-        .onChange(of: selectedMonth) { _ in adjustDaySelection() }
-        .onChange(of: selectedYear) { _ in adjustDaySelection() }
+        .onChange(of: selectedMonth) { oldValue, newValue in adjustDaySelection() }
+        .onChange(of: selectedYear) { oldValue, newValue in adjustDaySelection() }
     }
     
     private var daysInMonth: [Int] {

@@ -18,7 +18,7 @@ struct SmartReminderApp: App {
             LaunchScreenView()
                 .modelContainer(for: [Reminder.self, ReminderCategory.self, Note.self])
         }
-        .onChange(of: scenePhase) { newPhase in
+        .onChange(of: scenePhase) { oldPhase, newPhase in
             if newPhase == .active {
                 // 当 app 回到前台时，清除 badge 和已送达通知
                 NotificationManager.shared.clearBadge()

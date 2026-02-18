@@ -9,6 +9,8 @@ struct ReminderListView: View {
     @ObservedObject var store: ReminderStore
     @State private var showingAddReminder = false
     @State private var showingCategoryManagement = false
+    @State private var reminderToDelete: Reminder? = nil
+    @State private var showingDeleteAlert = false
     
     var body: some View {
         List {
@@ -46,7 +48,7 @@ struct ReminderListView: View {
             } else {
                 // 今日已逾期
                 if !store.overdueReminders.isEmpty {
-                    Section(header: Text("今日已逾期 (\(store.overdueReminders.count))").foregroundColor(.red)) {
+                    Section(header: Text("已逾期 (\(store.overdueReminders.count))").foregroundColor(.red)) {
                         ForEach(store.overdueReminders, id: \.id) { reminder in
                             ReminderRowView(reminder: reminder, store: store)
                                 .listRowSeparator(.hidden)
@@ -54,9 +56,8 @@ struct ReminderListView: View {
                                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     Button(role: .destructive) {
-                                        withAnimation {
-                                            store.deleteReminder(reminder)
-                                        }
+                                        reminderToDelete = reminder
+                                        showingDeleteAlert = true
                                     } label: {
                                         Label("删除", systemImage: "trash")
                                     }
@@ -85,9 +86,8 @@ struct ReminderListView: View {
                                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     Button(role: .destructive) {
-                                        withAnimation {
-                                            store.deleteReminder(reminder)
-                                        }
+                                        reminderToDelete = reminder
+                                        showingDeleteAlert = true
                                     } label: {
                                         Label("删除", systemImage: "trash")
                                     }
@@ -132,6 +132,17 @@ struct ReminderListView: View {
             NavigationStack {
                 CategoryManagementView(store: store)
             }
+        }
+        .alert("确认删除", isPresented: $showingDeleteAlert, presenting: reminderToDelete) { reminder in
+            Button("取消", role: .cancel) { reminderToDelete = nil }
+            Button("删除", role: .destructive) {
+                withAnimation {
+                    store.deleteReminder(reminder)
+                }
+                reminderToDelete = nil
+            }
+        } message: { reminder in
+            Text("确定要删除「\(reminder.title)」吗？此操作无法撤销。")
         }
     }
     

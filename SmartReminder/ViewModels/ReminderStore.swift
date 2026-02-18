@@ -8,6 +8,10 @@ import SwiftData
 import Combine
 import NaturalLanguage
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 @MainActor
 class ReminderStore: ObservableObject {
     @Published var reminders: [Reminder] = []
@@ -92,6 +96,7 @@ class ReminderStore: ObservableObject {
     func updateReminder(_ reminder: Reminder) {
         save()
         fetchReminders()
+        cancelNotification(for: reminder)
         scheduleNotification(for: reminder)
     }
     
@@ -108,6 +113,11 @@ class ReminderStore: ObservableObject {
         reminder.isCompleted.toggle()
         save()
         fetchReminders()
+        
+        #if canImport(UIKit)
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(reminder.isCompleted ? .success : .warning)
+        #endif
         
         if reminder.isCompleted {
             cancelNotification(for: reminder)
@@ -274,6 +284,14 @@ class ReminderStore: ObservableObject {
         }
     }
     
+    /// 重新调度所有未完成且未过期提醒的通知（暂停恢复时使用）
+    func rescheduleAllNotifications() {
+        let now = Date()
+        for reminder in reminders where !reminder.isCompleted && reminder.dueDate > now {
+            notificationManager.scheduleNotification(for: reminder)
+        }
+    }
+    
     // MARK: - Save
     
     private func save() {
@@ -352,14 +370,11 @@ class ReminderStore: ObservableObject {
     }
     
     var overdueReminders: [Reminder] {
-        let calendar = Calendar.current
-        let today = Date()
-        // 只展示当天逾期的提醒
+        let now = Date()
+        // 展示所有逾期的未完成提醒
         return reminders.filter {
-            calendar.isDate($0.dueDate, inSameDayAs: today) &&
-            $0.dueDate < today &&
-            !$0.isCompleted
-        }
+            $0.dueDate < now && !$0.isCompleted
+        }.sorted { $0.dueDate > $1.dueDate }
     }
     
     // MARK: - Natural Language Processing
