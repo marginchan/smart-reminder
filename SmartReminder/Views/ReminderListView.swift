@@ -54,10 +54,12 @@ struct ReminderListView: View {
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
                                         reminderToDelete = reminder
-                                        showingDeleteAlert = true
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                            showingDeleteAlert = true
+                                        }
                                     } label: {
                                         Label("删除", systemImage: "trash")
                                     }
@@ -84,10 +86,12 @@ struct ReminderListView: View {
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
                                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
                                         reminderToDelete = reminder
-                                        showingDeleteAlert = true
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                            showingDeleteAlert = true
+                                        }
                                     } label: {
                                         Label("删除", systemImage: "trash")
                                     }
