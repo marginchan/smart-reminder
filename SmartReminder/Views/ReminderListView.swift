@@ -11,14 +11,23 @@ struct ReminderListView: View {
     @State private var showingCategoryManagement = false
     @State private var reminderToDelete: Reminder? = nil
     @State private var showingDeleteAlert = false
+    @State private var showScrollToTop = false
     
     var body: some View {
-        List {
+        ScrollViewReader { scrollProxy in
+            List {
             // 品牌 Logo Section
             Section {
                 // 品牌 Logo
                 HStack(spacing: 12) {
                     NiumaLogoView(size: 50)
+                        .id("top")
+                        .onAppear {
+                            withAnimation { showScrollToTop = false }
+                        }
+                        .onDisappear {
+                            withAnimation { showScrollToTop = true }
+                        }
                     
                     VStack(alignment: .leading, spacing: 2) {
                         Text("牛马提醒")
@@ -152,6 +161,26 @@ struct ReminderListView: View {
                 reminderToDelete = nil
             }
         }
+        .overlay(alignment: .bottomTrailing) {
+            if showScrollToTop {
+                Button {
+                    withAnimation {
+                        scrollProxy.scrollTo("top", anchor: .top)
+                    }
+                } label: {
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
+                        .background(Color.blue.opacity(0.8))
+                        .clipShape(Circle())
+                        .shadow(radius: 4)
+                }
+                .padding(.trailing, 20)
+                .padding(.bottom, 20)
+            }
+        }
+    }
     }
     
     // MARK: - Components

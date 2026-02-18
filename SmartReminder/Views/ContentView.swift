@@ -631,6 +631,7 @@ struct CalendarMonthView: View {
     @State private var selectedDayReminders: [Reminder] = []
     @State private var selectedDate: Date? = nil
     @State private var showingAddReminder = false
+    @State private var showScrollToTop = false
     
     init(store: ReminderStore) {
         self.store = store
@@ -665,22 +666,24 @@ struct CalendarMonthView: View {
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    Button {
-                        jumpToToday()
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "arrow.uturn.backward")
-                                .font(.caption2)
-                            Text("回到今天")
-                                .font(.caption2.weight(.semibold))
+                    if selectedMonth != baseMonth {
+                        Button {
+                            jumpToToday()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.uturn.backward")
+                                    .font(.caption2)
+                                Text("回到今天")
+                                    .font(.caption2.weight(.semibold))
+                            }
+                            .foregroundColor(.blue)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .stroke(Color.blue.opacity(0.5), lineWidth: 1)
+                            )
                         }
-                        .foregroundColor(.blue)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .stroke(Color.blue.opacity(0.5), lineWidth: 1)
-                        )
                     }
                     
                     Spacer()
@@ -724,9 +727,10 @@ struct CalendarMonthView: View {
                 
                 Divider()
                 
-                ScrollView {
-                    VStack(spacing: 12) {
-                        if let date = selectedDate {
+                ScrollViewReader { scrollProxy in
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            if let date = selectedDate {
                             HStack {
                                 Text(formatDetailDate(date))
                                     .font(.headline)
@@ -767,7 +771,37 @@ struct CalendarMonthView: View {
                             }
                         }
                     }
+                    .id("top")
+                    .background(GeometryReader { geo in
+                        Color.clear.preference(key: ScrollOffsetPreferenceKey.self, value: geo.frame(in: .named("scroll")).minY)
+                    })
                 }
+                .coordinateSpace(name: "scroll")
+                .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
+                    withAnimation {
+                        showScrollToTop = value < -50
+                    }
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    if showScrollToTop {
+                        Button {
+                            withAnimation {
+                                scrollProxy.scrollTo("top", anchor: .top)
+                            }
+                        } label: {
+                            Image(systemName: "arrow.up")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 44)
+                                .background(Color.blue.opacity(0.8))
+                                .clipShape(Circle())
+                                .shadow(radius: 4)
+                        }
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 20)
+                    }
+                }
+            }
             }
         .background(Color.appSystemBackground)
 
@@ -980,6 +1014,13 @@ struct NiumaLogoView: View {
 // MARK: - Helper Extensions
 
 // Color extensions are now in Extensions/Color+Hex.swift
+
+struct ScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
 
 
 
