@@ -77,15 +77,18 @@ struct CalendarWeekView: View {
     @State private var showingAddReminder = false
     @State private var selectedDateForAdd: Date? = nil
     @State private var visibleDates: [Date] = []
+    @State private var isLoadingMore = false
+    @State private var hasMoreDays = true
     
     private let calendar = Calendar.current
     private let topAnchorID = "calendarTopAnchor"
+    private let prefetchThreshold = 5  // 距离底部还有 5 个时开始预加载
     
     init(store: ReminderStore) {
         self.store = store
         let today = Calendar.current.startOfDay(for: Date())
         self._expandedDates = State(initialValue: [today])
-        self._visibleDates = State(initialValue: CalendarWeekView.makeDates(from: today, days: 14))
+        self._visibleDates = State(initialValue: CalendarWeekView.makeDates(from: today, days: 30))
     }
     
     var body: some View {
@@ -96,7 +99,7 @@ struct CalendarWeekView: View {
                     .id(topAnchorID)
                 
                 LazyVStack(spacing: 20) {
-                    ForEach(visibleDates, id: \.self) { date in
+                    ForEach(Array(visibleDates.enumerated()), id: \.element) { index, date in
                         DaySectionView(
                             date: date,
                             store: store,
@@ -104,11 +107,26 @@ struct CalendarWeekView: View {
                             showingAddReminder: $showingAddReminder,
                             selectedDateForAdd: $selectedDateForAdd
                         )
-                            .onAppear {
-                                if date == visibleDates.last {
-                                    loadMoreDays()
-                                }
+                        .onAppear {
+                            // 提前预加载：距离底部还有 prefetchThreshold 个时触发
+                            if index >= visibleDates.count - prefetchThreshold {
+                                loadMoreDays()
                             }
+                        }
+                    }
+                    
+                    // 底部加载指示器
+                    if hasMoreDays {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .tint(.secondary)
+                            Text("加载更多...")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .onAppear { loadMoreDays() }
                     }
                 }
                 .padding()
@@ -171,14 +189,28 @@ struct CalendarWeekView: View {
     }
     
     private func loadMoreDays() {
+        guard !isLoadingMore, hasMoreDays else { return }
         guard let lastDate = visibleDates.last else { return }
         let maxDate = calendar.date(byAdding: .year, value: 1, to: calendar.startOfDay(for: Date())) ?? lastDate
         let nextDate = calendar.date(byAdding: .day, value: 1, to: lastDate) ?? lastDate
-        guard nextDate <= maxDate else { return }
+        guard nextDate <= maxDate else {
+            hasMoreDays = false
+            return
+        }
+        
+        isLoadingMore = true
         let remainingDays = calendar.dateComponents([.day], from: nextDate, to: maxDate).day ?? 0
-        let batch = min(14, remainingDays + 1)
+        let batch = min(30, remainingDays + 1)
         let more = CalendarWeekView.makeDates(from: nextDate, days: batch)
-        visibleDates.append(contentsOf: more)
+        
+        // 微延迟让 UI 有喘息空间
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            visibleDates.append(contentsOf: more)
+            isLoadingMore = false
+            if batch >= remainingDays + 1 {
+                hasMoreDays = false
+            }
+        }
     }
 }
 
@@ -428,7 +460,7 @@ struct LaunchScreenView_Legacy: View {
 
 struct SettingsView: View {
     @ObservedObject var store: ReminderStore
-    @AppStorage("showCompleted") private var showCompleted = true
+
     @AppStorage("appTheme") private var appTheme: AppTheme = .system
     @AppStorage("remindersEnabled") private var remindersEnabled = true
     @AppStorage("remindersPausedUntil") private var remindersPausedUntil: Double = 0
@@ -498,11 +530,6 @@ struct SettingsView: View {
             }
             
             Section(header: Text("显示选项")) {
-                Toggle("显示已完成提醒", isOn: $showCompleted)
-                    .onChange(of: showCompleted) { oldValue, newValue in
-                        store.showCompleted = newValue
-                    }
-                
                 Picker("主题模式", selection: $appTheme) {
                     ForEach(AppTheme.allCases) { theme in
                         Text(theme.rawValue).tag(theme)
@@ -531,7 +558,6 @@ struct SettingsView: View {
         }
         .navigationTitle("设置")
         .onAppear {
-            store.showCompleted = showCompleted
             checkNotificationStatus()
         }
     }

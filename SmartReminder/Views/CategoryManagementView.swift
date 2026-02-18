@@ -218,25 +218,29 @@ struct CategoryDetailView: View {
     @ObservedObject var store: ReminderStore
     @State private var showingEditSheet = false
     
-    var categoryReminders: [Reminder] {
-        store.reminders.filter { $0.category?.id == category.id }
+    /// 仅显示未完成 & 未过期的提醒
+    var activeReminders: [Reminder] {
+        let now = Date()
+        return store.reminders
+            .filter { $0.category?.id == category.id && !$0.isCompleted && $0.dueDate >= now }
+            .sorted { $0.dueDate < $1.dueDate }
     }
     
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
-                if categoryReminders.isEmpty {
+                if activeReminders.isEmpty {
                     VStack(spacing: 20) {
                         Spacer().frame(height: 50)
                         Image(systemName: category.icon)
                             .font(.system(size: 60))
-                            .foregroundColor(Color.fromHex( category.color))
+                            .foregroundColor(Color.fromHex(category.color))
                             .opacity(0.3)
-                        Text("该分类下暂无提醒")
+                        Text("该分类下暂无待办提醒")
                             .foregroundColor(.secondary)
                     }
                 } else {
-                    ForEach(categoryReminders) { reminder in
+                    ForEach(activeReminders) { reminder in
                         ReminderRowView(reminder: reminder, store: store)
                     }
                 }

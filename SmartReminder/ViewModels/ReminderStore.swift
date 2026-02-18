@@ -326,13 +326,11 @@ class ReminderStore: ObservableObject {
             result = result.filter { $0.priority == priority }
         }
         
-        // 完成状态过滤
-        if !showCompleted {
-            result = result.filter { !$0.isCompleted }
-        }
+        // 完成状态过滤 - 首页不显示已完成的提醒
+        result = result.filter { !$0.isCompleted }
         
-        // 仅展示未来 1 年内的提醒（首页提醒列表）
-        let now = Date()
+        // 仅展示从今天起未来 1 年内的提醒（首页提醒列表）
+        let now = Calendar.current.startOfDay(for: Date())
         let oneYearLater = Calendar.current.date(byAdding: .year, value: 1, to: now) ?? now
         result = result.filter { $0.dueDate >= now && $0.dueDate <= oneYearLater }
         
@@ -350,7 +348,7 @@ class ReminderStore: ObservableObject {
     var todayReminders: [Reminder] {
         let calendar = Calendar.current
         var result = reminders.filter { reminder in
-            calendar.isDate(reminder.dueDate, inSameDayAs: Date()) && (showCompleted || !reminder.isCompleted)
+            calendar.isDate(reminder.dueDate, inSameDayAs: Date()) && !reminder.isCompleted
         }
         result.sort { r1, r2 in
             if r1.isCompleted != r2.isCompleted {
@@ -371,9 +369,10 @@ class ReminderStore: ObservableObject {
     
     var overdueReminders: [Reminder] {
         let now = Date()
-        // 展示所有逾期的未完成提醒
+        let startOfToday = Calendar.current.startOfDay(for: now)
+        // 仅展示当天逾期的未完成提醒
         return reminders.filter {
-            $0.dueDate < now && !$0.isCompleted
+            $0.dueDate < now && $0.dueDate >= startOfToday && !$0.isCompleted
         }.sorted { $0.dueDate > $1.dueDate }
     }
     
