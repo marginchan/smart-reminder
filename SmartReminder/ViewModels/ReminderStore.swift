@@ -20,7 +20,7 @@ class ReminderStore: ObservableObject {
     @Published var noteSearchText: String = ""
     
     private var modelContext: ModelContext?
-    private var notificationManager = NotificationManager()
+    private let notificationManager = NotificationManager.shared
     
     // 标记是否已初始化示例数据
     private let hasInitializedSampleDataKey = "hasInitializedSampleData"
@@ -101,6 +101,7 @@ class ReminderStore: ObservableObject {
         context.delete(reminder)
         save()
         fetchReminders()
+        notificationManager.clearBadge()
     }
     
     func toggleComplete(_ reminder: Reminder) {
@@ -110,6 +111,8 @@ class ReminderStore: ObservableObject {
         
         if reminder.isCompleted {
             cancelNotification(for: reminder)
+            notificationManager.clearBadge()
+            notificationManager.clearDeliveredNotifications()
         } else {
             scheduleNotification(for: reminder)
         }
