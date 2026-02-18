@@ -142,25 +142,286 @@ struct ReminderListView: View {
 
     
     private var emptyStateView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 24) {
             Spacer()
-                .frame(height: 40)
-            Image(systemName: "bell.slash.fill")
-                .font(.system(size: 48))
-                .foregroundColor(.secondary)
-            Text("没有提醒")
-                .font(.headline)
-                .foregroundColor(.secondary)
-            Text("点击右上角按钮添加新提醒")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .frame(height: 20)
+            
+            // 3D Garfield Animation
+            GarfieldAnimationView()
+                .frame(height: 200)
+            
+            VStack(spacing: 8) {
+                Text("太棒了！所有任务都搞定了")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Text("享受你的摸鱼时间吧 ☕️")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            
+            Button(action: { showingAddReminder = true }) {
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                    Text("添加新任务")
+                }
+                .fontWeight(.medium)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(Color.blue.opacity(0.1))
+                .foregroundColor(.blue)
+                .cornerRadius(20)
+            }
+            .padding(.top, 8)
         }
-        .padding(.top, 40)
+        .padding(.vertical, 40)
+        .frame(maxWidth: .infinity)
     }
 }
 
 #Preview {
     NavigationStack {
         ReminderListView(store: ReminderStore())
+    }
+}
+
+struct GarfieldAnimationView: View {
+    @State private var isBlinking = false
+    @State private var isFloating = false
+    @State private var tailWag = false
+    
+    // Fixed coordinate space dimensions
+    // All Path coordinates are relative to center (cx, cy)
+    private let canvasWidth: CGFloat = 220
+    private let canvasHeight: CGFloat = 200
+    private var cx: CGFloat { canvasWidth / 2 }
+    private var cy: CGFloat { canvasHeight / 2 }
+    
+    var body: some View {
+        ZStack {
+            // Shadow
+            Ellipse()
+                .fill(Color.black.opacity(0.2))
+                .frame(width: 120, height: 20)
+                .offset(y: 110)
+                .scaleEffect(isFloating ? 0.9 : 1.1)
+                .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: isFloating)
+            
+            // Garfield Body Group - use a fixed frame so all Path children share the same coordinate space
+            ZStack {
+                // Tail
+                Path { path in
+                    path.move(to: CGPoint(x: cx + 60, y: cy + 30))
+                    path.addCurve(
+                        to: CGPoint(x: cx + 100, y: cy - 30),
+                        control1: CGPoint(x: cx + 110, y: cy + 30),
+                        control2: CGPoint(x: cx + 120, y: cy - 10)
+                    )
+                }
+                .stroke(Color.orange, style: StrokeStyle(lineWidth: 12, lineCap: .round))
+                .frame(width: canvasWidth, height: canvasHeight)
+                .rotationEffect(.degrees(tailWag ? 10 : -10), anchor: UnitPoint(x: (cx + 60) / canvasWidth, y: (cy + 30) / canvasHeight))
+                .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: tailWag)
+                
+                // Body/Face Main Shape (Rounded Rect for 3D look)
+                RoundedRectangle(cornerRadius: 45)
+                    .fill(
+                        LinearGradient(gradient: Gradient(colors: [Color(red: 1.0, green: 0.7, blue: 0.2), Color(red: 1.0, green: 0.5, blue: 0.0)]), startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    .frame(width: 140, height: 120)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 45)
+                            .stroke(Color(red: 0.8, green: 0.4, blue: 0.0), lineWidth: 2)
+                    )
+                    .shadow(color: Color.black.opacity(0.15), radius: 10, x: 5, y: 5) // 3D Shadow
+                
+                // Ears
+                Group {
+                    // Left Ear
+                    Path { path in
+                        path.move(to: CGPoint(x: cx - 50, y: cy - 50))
+                        path.addLine(to: CGPoint(x: cx - 20, y: cy - 50))
+                        path.addQuadCurve(to: CGPoint(x: cx - 50, y: cy - 80), control: CGPoint(x: cx - 30, y: cy - 70))
+                        path.closeSubpath()
+                    }
+                    .fill(Color(red: 1.0, green: 0.6, blue: 0.1))
+                    .overlay(
+                        Path { path in
+                            path.move(to: CGPoint(x: cx - 50, y: cy - 50))
+                            path.addLine(to: CGPoint(x: cx - 20, y: cy - 50))
+                            path.addQuadCurve(to: CGPoint(x: cx - 50, y: cy - 80), control: CGPoint(x: cx - 30, y: cy - 70))
+                            path.closeSubpath()
+                        }.stroke(Color(red: 0.8, green: 0.4, blue: 0.0), lineWidth: 2)
+                    )
+                    .frame(width: canvasWidth, height: canvasHeight)
+                    
+                    // Right Ear
+                    Path { path in
+                        path.move(to: CGPoint(x: cx + 50, y: cy - 50))
+                        path.addLine(to: CGPoint(x: cx + 20, y: cy - 50))
+                        path.addQuadCurve(to: CGPoint(x: cx + 50, y: cy - 80), control: CGPoint(x: cx + 30, y: cy - 70))
+                        path.closeSubpath()
+                    }
+                    .fill(Color(red: 1.0, green: 0.6, blue: 0.1))
+                    .overlay(
+                        Path { path in
+                            path.move(to: CGPoint(x: cx + 50, y: cy - 50))
+                            path.addLine(to: CGPoint(x: cx + 20, y: cy - 50))
+                            path.addQuadCurve(to: CGPoint(x: cx + 50, y: cy - 80), control: CGPoint(x: cx + 30, y: cy - 70))
+                            path.closeSubpath()
+                        }.stroke(Color(red: 0.8, green: 0.4, blue: 0.0), lineWidth: 2)
+                    )
+                    .frame(width: canvasWidth, height: canvasHeight)
+                }
+                
+                // Stripes (Simplified)
+                VStack(spacing: 8) {
+                    ForEach(0..<3) { _ in
+                        Capsule()
+                            .fill(Color.black.opacity(0.6))
+                            .frame(width: 20, height: 4)
+                    }
+                }
+                .offset(y: -45)
+                
+                // Eyes Background (White)
+                HStack(spacing: 2) {
+                    Ellipse()
+                        .fill(Color.white)
+                        .frame(width: 35, height: 45)
+                        .overlay(Ellipse().stroke(Color.black, lineWidth: 1))
+                    Ellipse()
+                        .fill(Color.white)
+                        .frame(width: 35, height: 45)
+                        .overlay(Ellipse().stroke(Color.black, lineWidth: 1))
+                }
+                .offset(y: -10)
+                
+                // Eyelids (Blinking Animation)
+                HStack(spacing: 2) {
+                    ZStack {
+                        Ellipse() // Mask for eyelid
+                            .fill(Color.clear)
+                            .frame(width: 35, height: 45)
+                            .clipShape(Rectangle().offset(y: isBlinking ? 0 : -45))
+                        
+                        Rectangle() // Eyelid color
+                            .fill(Color(red: 1.0, green: 0.65, blue: 0.1))
+                            .frame(width: 35, height: 45)
+                            .offset(y: isBlinking ? 0 : -45)
+                            .mask(Ellipse().frame(width: 35, height: 45))
+                    }
+                    
+                    ZStack {
+                        Ellipse() // Mask for eyelid
+                            .fill(Color.clear)
+                            .frame(width: 35, height: 45)
+                            .clipShape(Rectangle().offset(y: isBlinking ? 0 : -45))
+                        
+                        Rectangle() // Eyelid color
+                            .fill(Color(red: 1.0, green: 0.65, blue: 0.1))
+                            .frame(width: 35, height: 45)
+                            .offset(y: isBlinking ? 0 : -45)
+                            .mask(Ellipse().frame(width: 35, height: 45))
+                    }
+                }
+                .offset(y: -10)
+                
+                // Pupils
+                HStack(spacing: 18) {
+                    Circle()
+                        .fill(Color.black)
+                        .frame(width: 8, height: 8)
+                    Circle()
+                        .fill(Color.black)
+                        .frame(width: 8, height: 8)
+                }
+                .offset(y: -5)
+                
+                // Nose
+                Ellipse()
+                    .fill(Color.pink)
+                    .frame(width: 15, height: 10)
+                    .offset(y: 15)
+                
+                // Muzzle/Mouth Area
+                HStack(spacing: 0) {
+                    Circle()
+                        .fill(Color(red: 1.0, green: 0.85, blue: 0.5)) // Light yellow/beige
+                        .frame(width: 35, height: 30)
+                    Circle()
+                        .fill(Color(red: 1.0, green: 0.85, blue: 0.5))
+                        .frame(width: 35, height: 30)
+                }
+                .offset(y: 25)
+                .zIndex(-1) // Behind nose
+                
+                // Whiskers
+                Group {
+                    // Left
+                    Path { path in
+                        path.move(to: CGPoint(x: cx - 30, y: cy + 25))
+                        path.addLine(to: CGPoint(x: cx - 70, y: cy + 20))
+                    }.stroke(Color.black, lineWidth: 1)
+                    .frame(width: canvasWidth, height: canvasHeight)
+                    
+                    Path { path in
+                        path.move(to: CGPoint(x: cx - 30, y: cy + 30))
+                        path.addLine(to: CGPoint(x: cx - 70, y: cy + 30))
+                    }.stroke(Color.black, lineWidth: 1)
+                    .frame(width: canvasWidth, height: canvasHeight)
+                    
+                    Path { path in
+                        path.move(to: CGPoint(x: cx - 30, y: cy + 35))
+                        path.addLine(to: CGPoint(x: cx - 70, y: cy + 40))
+                    }.stroke(Color.black, lineWidth: 1)
+                    .frame(width: canvasWidth, height: canvasHeight)
+                    
+                    // Right
+                    Path { path in
+                        path.move(to: CGPoint(x: cx + 30, y: cy + 25))
+                        path.addLine(to: CGPoint(x: cx + 70, y: cy + 20))
+                    }.stroke(Color.black, lineWidth: 1)
+                    .frame(width: canvasWidth, height: canvasHeight)
+                    
+                    Path { path in
+                        path.move(to: CGPoint(x: cx + 30, y: cy + 30))
+                        path.addLine(to: CGPoint(x: cx + 70, y: cy + 30))
+                    }.stroke(Color.black, lineWidth: 1)
+                    .frame(width: canvasWidth, height: canvasHeight)
+                    
+                    Path { path in
+                        path.move(to: CGPoint(x: cx + 30, y: cy + 35))
+                        path.addLine(to: CGPoint(x: cx + 70, y: cy + 40))
+                    }.stroke(Color.black, lineWidth: 1)
+                    .frame(width: canvasWidth, height: canvasHeight)
+                }
+            }
+            .frame(width: canvasWidth, height: canvasHeight)
+            .offset(y: isFloating ? -10 : 10)
+            .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: isFloating)
+        }
+        .onAppear {
+            isFloating = true
+            tailWag = true
+            startBlinking()
+        }
+    }
+    
+    func startBlinking() {
+        // Random blinking
+        let randomInterval = Double.random(in: 2...5)
+        DispatchQueue.main.asyncAfter(deadline: .now() + randomInterval) {
+            withAnimation(.easeOut(duration: 0.15)) {
+                isBlinking = true
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                withAnimation(.easeIn(duration: 0.15)) {
+                    isBlinking = false
+                }
+                startBlinking() // Schedule next blink
+            }
+        }
     }
 }

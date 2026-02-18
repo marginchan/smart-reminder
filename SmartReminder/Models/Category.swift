@@ -40,6 +40,7 @@ class ReminderCategory {
         ReminderCategory(name: "学习", color: "#5856D6", icon: "book.fill")
     ]
 }
+
 extension Color {
     static var appSystemBackground: Color {
         #if canImport(UIKit)
