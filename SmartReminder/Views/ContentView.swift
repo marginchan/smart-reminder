@@ -665,6 +665,24 @@ struct CalendarMonthView: View {
                         .font(.headline)
                         .foregroundColor(.primary)
                     
+                    Button {
+                        jumpToToday()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.uturn.backward")
+                                .font(.caption2)
+                            Text("回到今天")
+                                .font(.caption2.weight(.semibold))
+                        }
+                        .foregroundColor(.blue)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule()
+                                .stroke(Color.blue.opacity(0.5), lineWidth: 1)
+                        )
+                    }
+                    
                     Spacer()
                     
                     Button {
@@ -677,20 +695,6 @@ struct CalendarMonthView: View {
                 }
                 .padding(.horizontal)
                 .padding(.top, 8)
-                
-                HStack {
-                    Spacer()
-                    Button("今天") {
-                        jumpToToday()
-                    }
-                    .font(.caption)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(Color.blue.opacity(0.12))
-                    .clipShape(Capsule())
-                }
-                .padding(.horizontal)
-                .padding(.top, 2)
                 
                 HStack {
                     ForEach(["一", "二", "三", "四", "五", "六", "日"], id: \.self) { day in
@@ -730,23 +734,22 @@ struct CalendarMonthView: View {
                                 if selectedDayReminders.isEmpty {
                                     Text("无提醒").font(.subheadline).foregroundColor(.secondary)
                                 }
+                                // 只有今天或未来日期才显示添加按钮
+                                if date >= Calendar.current.startOfDay(for: Date()) {
+                                    Button(action: {
+                                        showingAddReminder = true
+                                    }) {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "plus.circle.fill")
+                                            Text("添加")
+                                        }
+                                        .font(.subheadline)
+                                        .foregroundColor(.blue)
+                                    }
+                                }
                             }
                             .padding(.horizontal)
                             .padding(.top)
-                            
-                            Button(action: {
-                                showingAddReminder = true
-                            }) {
-                                Label("添加提醒", systemImage: "plus.circle.fill")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.blue)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
-                                    .background(Color.blue.opacity(0.1))
-                                    .cornerRadius(8)
-                            }
-                            .padding(.horizontal)
                             
                             ForEach(selectedDayReminders) { reminder in
                                 ReminderRowView(reminder: reminder, store: store)

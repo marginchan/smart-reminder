@@ -135,16 +135,22 @@ struct ReminderListView: View {
                 CategoryManagementView(store: store)
             }
         }
-        .alert("确认删除", isPresented: $showingDeleteAlert, presenting: reminderToDelete) { reminder in
-            Button("取消", role: .cancel) { reminderToDelete = nil }
+        .confirmationDialog(
+            "确定要删除「\(reminderToDelete?.title ?? "")」吗？此操作无法撤销。",
+            isPresented: $showingDeleteAlert,
+            titleVisibility: .visible
+        ) {
             Button("删除", role: .destructive) {
-                withAnimation {
-                    store.deleteReminder(reminder)
+                if let reminder = reminderToDelete {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        store.deleteReminder(reminder)
+                    }
                 }
                 reminderToDelete = nil
             }
-        } message: { reminder in
-            Text("确定要删除「\(reminder.title)」吗？此操作无法撤销。")
+            Button("取消", role: .cancel) {
+                reminderToDelete = nil
+            }
         }
     }
     
