@@ -23,7 +23,7 @@ class ReminderStore: ObservableObject {
     @Published var showCompleted: Bool = true
     @Published var noteSearchText: String = ""
     
-    private var modelContext: ModelContext?
+    var modelContext: ModelContext?
     private let notificationManager = NotificationManager.shared
     
     // 标记是否已初始化示例数据
@@ -629,3 +629,93 @@ class ReminderStore: ObservableObject {
         }
     }
 }
+
+// MARK: - Mock Data Generation
+
+#if targetEnvironment(simulator)
+extension ReminderStore {
+    func generateMockData() {
+        guard let context = modelContext else { return }
+        
+        print("🤖 Generating Mock Data...")
+        
+        // 1. Ensure Categories exist
+        let categoryNames = ["工作", "个人", "购物", "学习"]
+        var categoryMap: [String: ReminderCategory] = [:]
+        
+        // Check existing categories
+        for category in categories {
+            categoryMap[category.name] = category
+        }
+        
+        for name in categoryNames {
+            if categoryMap[name] == nil {
+                let color = ["#FF3B30", "#007AFF", "#34C759", "#FF9500"].randomElement() ?? "#007AFF"
+                let icon = ["briefcase.fill", "person.fill", "cart.fill", "book.fill"].randomElement() ?? "list.bullet"
+                let newCategory = ReminderCategory(name: name, color: color, icon: icon)
+                context.insert(newCategory)
+                categoryMap[name] = newCategory
+            }
+        }
+        
+        // 2. Generate Random Reminders
+        let titles = ["提交周报", "买牛奶", "预约牙医", "学习 SwiftData", "健身", "给妈妈打电话", "整理桌面", "阅读一本书", "Code Review", "写文档"]
+        let priorities: [Priority] = [.low, .medium, .high]
+        
+        let now = Date()
+        let calendar = Calendar.current
+        
+        for _ in 0..<10 {
+            let title = titles.randomElement()!
+            let category = categoryMap.values.randomElement()
+            let priority = priorities.randomElement()!
+            
+            // Random date: mostly around now
+            let dayOffset = Int.random(in: -5...10)
+            let hourOffset = Int.random(in: 0...23)
+            let date = calendar.date(byAdding: .day, value: dayOffset, to: now)!
+            let dueDate = calendar.date(byAdding: .hour, value: hourOffset, to: date)!
+            
+            let reminder = Reminder(
+                title: title,
+                notes: "这是自动生成的测试数据\nID: \(UUID().uuidString.prefix(8))",
+                dueDate: dueDate,
+                priority: priority,
+                category: category
+            )
+            
+            // Randomly complete some past reminders
+            if dayOffset < 0 && Bool.random() {
+                reminder.isCompleted = true
+
+            }
+            
+            context.insert(reminder)
+        }
+        
+        // 3. Generate Random Notes
+        let noteTitles = ["会议记录", "购物清单", "灵感闪现", "待办事项"]
+        for _ in 0..<3 {
+            let title = noteTitles.randomElement()!
+            let note = Note(
+                title: title,
+                content: "这是自动生成的测试便签内容。\nMock Data \nTime: \(Date())",
+                color: ["#FFD60A", "#4ECDC4", "#FF6B6B"].randomElement() ?? "#FFD60A",
+                isPinned: Bool.random()
+            )
+            context.insert(note)
+        }
+        
+        do {
+            try context.save()
+            // Refresh UI
+            fetchReminders()
+            fetchCategories()
+            fetchNotes()
+            print("✅ Mock Data Generated Successfully")
+        } catch {
+            print("❌ Failed to save mock data: \(error)")
+        }
+    }
+}
+#endif

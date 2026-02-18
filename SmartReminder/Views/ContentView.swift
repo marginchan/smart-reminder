@@ -555,6 +555,17 @@ struct SettingsView: View {
                     }
                 }
             }
+            
+            #if targetEnvironment(simulator)
+            Section(header: Text("开发工具")) {
+                Button {
+                    store.generateMockData()
+                } label: {
+                    Label("生成测试数据", systemImage: "hammer.fill")
+                        .foregroundColor(.purple)
+                }
+            }
+            #endif
         }
         .navigationTitle("设置")
         .onAppear {

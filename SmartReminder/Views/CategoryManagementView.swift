@@ -198,7 +198,7 @@ struct CategoryRowView: View {
             
             Spacer()
             
-            let count = store.reminders.filter { $0.category?.id == category.id }.count
+            let count = store.reminders.filter { $0.category?.id == category.id && !$0.isCompleted && $0.dueDate >= Date() }.count
             if count > 0 {
                 Text("\(count)")
                     .font(.caption)
