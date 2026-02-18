@@ -42,8 +42,8 @@ struct ReminderRowView: View {
                     .font(.caption)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color.fromHex(category.color).opacity(0.1))
-                    .foregroundColor(Color.fromHex(category.color))
+                    .background(Color.secondary.opacity(0.1))
+                    .foregroundColor(.secondary)
                     .cornerRadius(8)
                 }
             }
@@ -54,11 +54,13 @@ struct ReminderRowView: View {
             // 时间放右侧
             VStack(alignment: .trailing, spacing: 4) {
                 Text(formattedTime(reminder.dueDate))
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 16, weight: .bold))
                     .foregroundColor(isOverdue ? .red : .primary)
+                let isToday = Calendar.current.isDateInToday(reminder.dueDate)
                 Text(formattedDateShort(reminder.dueDate))
                     .font(.caption)
-                    .foregroundColor(isOverdue ? .red : .secondary)
+                    .fontWeight(isToday ? .semibold : .regular)
+                    .foregroundColor(isOverdue ? .red : (isToday ? .accentColor : .secondary))
             }
             .padding(.trailing, 16)
             .padding(.top, 16)
@@ -77,9 +79,9 @@ struct ReminderRowView: View {
     
     private var priorityColor: Color {
         switch reminder.priority {
-        case .low: return Color.fromHex("#8E8E93")     // 灰色
-        case .medium: return Color.fromHex("#007AFF")  // 蓝色
-        case .high: return Color.fromHex("#FF3B30")    // 红色
+        case .low: return Color.secondary.opacity(0.3)
+        case .medium: return Color.fromHex("#007AFF").opacity(0.4)
+        case .high: return Color.fromHex("#FF3B30").opacity(0.5)
         }
     }
     
