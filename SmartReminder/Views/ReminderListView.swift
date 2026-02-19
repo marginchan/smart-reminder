@@ -47,6 +47,7 @@ struct ReminderListView: View {
             }
         }
         .listStyle(.plain)
+        .listSectionSpacing(0)
         .background(Color.appSystemBackground)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -60,7 +61,6 @@ struct ReminderListView: View {
                 Button(action: { showingAddReminder = true }) {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
-                        .fontWeight(.semibold)
                 }
             }
         }
