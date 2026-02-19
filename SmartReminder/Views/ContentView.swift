@@ -23,6 +23,7 @@ enum AppTheme: String, CaseIterable, Identifiable {
 }
 
 struct ContentView: View {
+    @Environment(\.scenePhase) var scenePhase
     @Environment(\.modelContext) private var modelContext
     @StateObject private var store = ReminderStore()
     @State private var showingAddReminder = false
@@ -66,6 +67,14 @@ struct ContentView: View {
         .onAppear {
             store.setupModelContext(modelContext)
         }
+        .onChange(of: scenePhase) { oldValue, newValue in
+            if newValue == .active {
+                store.refresh()
+            }
+        }
+        .onChange(of: selectedTab) { oldValue, newValue in
+            store.refresh()
+        }
         .preferredColorScheme(appTheme.colorScheme)
     }
 }
@@ -87,7 +96,7 @@ struct CalendarWeekView: View {
     init(store: ReminderStore) {
         self.store = store
         let today = Calendar.current.startOfDay(for: Date())
-        self._expandedDates = State(initialValue: [today])
+        self._expandedDates = State(initialValue: [])
         self._visibleDates = State(initialValue: CalendarWeekView.makeDates(from: today, days: 30))
     }
     

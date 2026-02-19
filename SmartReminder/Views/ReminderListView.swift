@@ -16,72 +16,22 @@ struct ReminderListView: View {
     var body: some View {
         ScrollViewReader { scrollProxy in
             List {
-            // 品牌 Logo Section
-            Section {
-                // 品牌 Logo
-                HStack(spacing: 12) {
-                    NiumaLogoView(size: 50)
-                        .id("top")
-                        .onAppear {
-                            withAnimation { showScrollToTop = false }
-                        }
-                        .onDisappear {
-                            withAnimation { showScrollToTop = true }
-                        }
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("牛马提醒")
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
-                        Text("打工人的智能助手")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity, alignment: .bottom)
-                .padding(.top, 12)
-                .padding(.bottom, -8)
-                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-            }
-            
             if store.overdueReminders.isEmpty && store.filteredReminders.isEmpty {
                 Section {
                     emptyStateView
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
+                        .id("top")
+                        .onAppear { withAnimation { showScrollToTop = false } }
+                        .onDisappear { withAnimation { showScrollToTop = true } }
                 }
             } else {
                 // 今日已逾期
                 if !store.overdueReminders.isEmpty {
                     Section(header: Text("已逾期 (\(store.overdueReminders.count))").foregroundColor(.red)) {
                         ForEach(store.overdueReminders, id: \.id) { reminder in
-                            ReminderRowView(reminder: reminder, store: store)
-                                .listRowSeparator(.hidden)
-                                .listRowBackground(Color.clear)
-                                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                    Button {
-                                        reminderToDelete = reminder
-                                        showingDeleteAlert = true
-                                    } label: {
-                                        Label("删除", systemImage: "trash")
-                                    }
-                                    .tint(.red)
-                                }
-                                .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                                    Button {
-                                        withAnimation(.easeOut(duration: 0.3)) {
-                                            store.toggleComplete(reminder)
-                                        }
-                                    } label: {
-                                        Label("完成", systemImage: "checkmark")
-                                    }
-                                    .tint(.green)
-                                }
+                            overdueRow(reminder)
                         }
                     }
                 }
@@ -90,29 +40,7 @@ struct ReminderListView: View {
                 if !store.filteredReminders.isEmpty {
                     Section(header: Text("提醒列表 (\(store.filteredReminders.count))").foregroundColor(.primary)) {
                         ForEach(store.filteredReminders, id: \.id) { reminder in
-                            ReminderRowView(reminder: reminder, store: store)
-                                .listRowSeparator(.hidden)
-                                .listRowBackground(Color.clear)
-                                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                    Button {
-                                        reminderToDelete = reminder
-                                        showingDeleteAlert = true
-                                    } label: {
-                                        Label("删除", systemImage: "trash")
-                                    }
-                                    .tint(.red)
-                                }
-                                .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                                    Button {
-                                        withAnimation(.easeOut(duration: 0.3)) {
-                                            store.toggleComplete(reminder)
-                                        }
-                                    } label: {
-                                        Label("完成", systemImage: "checkmark")
-                                    }
-                                    .tint(.green)
-                                }
+                            filteredRow(reminder)
                         }
                     }
                 }
@@ -161,6 +89,7 @@ struct ReminderListView: View {
                 reminderToDelete = nil
             }
         }
+        .navigationTitle("提醒")
         .overlay(alignment: .bottomTrailing) {
             if showScrollToTop {
                 Button {
@@ -184,6 +113,51 @@ struct ReminderListView: View {
     }
     
     // MARK: - Components
+    @ViewBuilder
+    private func overdueRow(_ reminder: Reminder) -> some View {
+        let isFirst = reminder.id == store.overdueReminders.first?.id
+        ReminderRowView(reminder: reminder, store: store)
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+            .id(isFirst ? "top" : reminder.id.uuidString)
+            .onAppear { if isFirst { withAnimation { showScrollToTop = false } } }
+            .onDisappear { if isFirst { withAnimation { showScrollToTop = true } } }
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                Button { reminderToDelete = reminder; showingDeleteAlert = true } label: {
+                    Label("删除", systemImage: "trash")
+                }.tint(.red)
+            }
+            .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                Button { withAnimation(.easeOut(duration: 0.3)) { store.toggleComplete(reminder) } } label: {
+                    Label("完成", systemImage: "checkmark")
+                }.tint(.green)
+            }
+    }
+
+    @ViewBuilder
+    private func filteredRow(_ reminder: Reminder) -> some View {
+        let isFirst = store.overdueReminders.isEmpty && reminder.id == store.filteredReminders.first?.id
+        ReminderRowView(reminder: reminder, store: store)
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+            .id(isFirst ? "top" : reminder.id.uuidString)
+            .onAppear { if isFirst { withAnimation { showScrollToTop = false } } }
+            .onDisappear { if isFirst { withAnimation { showScrollToTop = true } } }
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                Button { reminderToDelete = reminder; showingDeleteAlert = true } label: {
+                    Label("删除", systemImage: "trash")
+                }.tint(.red)
+            }
+            .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                Button { withAnimation(.easeOut(duration: 0.3)) { store.toggleComplete(reminder) } } label: {
+                    Label("完成", systemImage: "checkmark")
+                }.tint(.green)
+            }
+    }
+
+
     
 
     

@@ -35,9 +35,7 @@ class ReminderStore: ObservableObject {
     
     func setupModelContext(_ context: ModelContext) {
         self.modelContext = context
-        fetchReminders()
-        fetchCategories()
-        fetchNotes()
+        refresh()
         initializeDefaultCategories()
         
         // 仅在首次安装时初始化示例数据
@@ -49,6 +47,12 @@ class ReminderStore: ObservableObject {
     }
     
     // MARK: - Fetch
+    
+    func refresh() {
+        fetchReminders()
+        fetchCategories()
+        fetchNotes()
+    }
     
     func fetchReminders() {
         guard let context = modelContext else { return }
@@ -374,7 +378,7 @@ class ReminderStore: ObservableObject {
         // 仅展示当天逾期的未完成提醒
         return reminders.filter {
             $0.dueDate < now && $0.dueDate >= startOfToday && !$0.isCompleted
-        }.sorted { $0.dueDate > $1.dueDate }
+        }.sorted { $0.dueDate < $1.dueDate }
     }
     
     // MARK: - Natural Language Processing
