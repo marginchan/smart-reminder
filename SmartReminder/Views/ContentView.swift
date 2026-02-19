@@ -88,6 +88,7 @@ struct CalendarWeekView: View {
     @State private var visibleDates: [Date] = []
     @State private var isLoadingMore = false
     @State private var hasMoreDays = true
+    @State private var showScrollToTop = false
     
     private let calendar = Calendar.current
     private let topAnchorID = "calendarTopAnchor"
@@ -121,6 +122,16 @@ struct CalendarWeekView: View {
                             if index >= visibleDates.count - prefetchThreshold {
                                 loadMoreDays()
                             }
+                            // 第一个日期回到可视区域时隐藏按钮
+                            if index == 0 {
+                                withAnimation { showScrollToTop = false }
+                            }
+                        }
+                        .onDisappear {
+                            // 第一个日期离开可视区域时显示按钮
+                            if index == 0 {
+                                withAnimation { showScrollToTop = true }
+                            }
                         }
                     }
                     
@@ -143,21 +154,23 @@ struct CalendarWeekView: View {
             }
             .background(Color.appSystemBackground)
             .overlay(alignment: .bottomTrailing) {
-                Button {
-                    withAnimation {
-                        proxy.scrollTo(topAnchorID, anchor: .top)
+                if showScrollToTop {
+                    Button {
+                        withAnimation {
+                            proxy.scrollTo(topAnchorID, anchor: .top)
+                        }
+                    } label: {
+                        Image(systemName: "arrow.up")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(Color.blue)
+                            .clipShape(Circle())
+                            .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
                     }
-                } label: {
-                    Image(systemName: "arrow.up")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(width: 40, height: 40)
-                        .background(Color.blue)
-                        .clipShape(Circle())
-                        .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 24)
                 }
-                .padding(.trailing, 16)
-                .padding(.bottom, 24)
             }
         }
         .navigationTitle("日历")
