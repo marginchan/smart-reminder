@@ -511,13 +511,7 @@ struct SettingsView: View {
                     }
                 
                 if remindersEnabled {
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
-                        Text("开启中")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
+                    // 开启状态下不显示额外文字/图标
                 } else {
                     VStack(alignment: .leading, spacing: 15) {
                         HStack {
@@ -527,6 +521,8 @@ struct SettingsView: View {
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                                 .foregroundColor(.secondary)
+                                .contentTransition(.numericText())
+                                .animation(.default, value: remindersPausedUntil)
                         }
                         
                         HStack(spacing: 12) {
@@ -622,7 +618,7 @@ struct SettingsView: View {
     }
     
     private func pauseButton(label: String, hours: Int) -> some View {
-        Button(action: {
+        PauseButtonView(label: label) {
             #if canImport(UIKit)
             let generator = UIImpactFeedbackGenerator(style: .light)
             generator.impactOccurred()
@@ -630,16 +626,36 @@ struct SettingsView: View {
             withAnimation {
                 remindersPausedUntil = Date().addingTimeInterval(Double(hours) * 3600).timeIntervalSince1970
             }
-        }) {
-            Text(label)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.primary)
-                .padding(.vertical, 8)
-                .frame(maxWidth: .infinity)
-                .background(Color.appTertiarySystemFill)
-                .cornerRadius(8)
         }
-        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+/// 独立按钮视图，使用手势手动追踪按压状态，避免 Form 拦截 ButtonStyle
+struct PauseButtonView: View {
+    let label: String
+    let action: () -> Void
+    
+    @GestureState private var isPressed = false
+    
+    var body: some View {
+        Text(label)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundColor(.primary)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .background(isPressed ? Color.secondary.opacity(0.3) : Color.appTertiarySystemFill)
+            .cornerRadius(8)
+            .scaleEffect(isPressed ? 0.93 : 1.0)
+            .animation(.easeInOut(duration: 0.12), value: isPressed)
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .updating($isPressed) { _, state, _ in
+                        state = true
+                    }
+                    .onEnded { _ in
+                        action()
+                    }
+            )
     }
 }
 

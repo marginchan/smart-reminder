@@ -89,10 +89,20 @@ struct ReminderRowView: View {
         reminder.dueDate < Date() && !reminder.isCompleted
     }
     
-    private func formattedTime(_ date: Date) -> String {
+    private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
+        return formatter
+    }()
+    
+    private static let shortDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M/d"
+        return formatter
+    }()
+    
+    private func formattedTime(_ date: Date) -> String {
+        Self.timeFormatter.string(from: date)
     }
     
     private func formattedDateShort(_ date: Date) -> String {
@@ -102,9 +112,7 @@ struct ReminderRowView: View {
         } else if calendar.isDateInTomorrow(date) {
             return "明天"
         } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "M/d"
-            return formatter.string(from: date)
+            return Self.shortDateFormatter.string(from: date)
         }
     }
 }
