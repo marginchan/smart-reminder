@@ -54,6 +54,21 @@ class ReminderStore: ObservableObject {
         fetchNotes()
     }
     
+    /// 按目标 Tab 局部刷新，避免不必要的数据更新
+    func refreshForTab(_ tab: Int) {
+        switch tab {
+        case 0: // 提醒
+            fetchReminders()
+            fetchCategories()
+        case 1: // 日历
+            fetchReminders()
+        case 2: // 便签
+            fetchNotes()
+        default: // 设置等
+            break
+        }
+    }
+    
     func fetchReminders() {
         guard let context = modelContext else { return }
         

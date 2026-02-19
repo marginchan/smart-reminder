@@ -69,11 +69,17 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { oldValue, newValue in
             if newValue == .active {
-                store.refresh()
+                // 延迟刷新，避免阻塞 UI
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    store.refreshForTab(selectedTab)
+                }
             }
         }
         .onChange(of: selectedTab) { oldValue, newValue in
-            store.refresh()
+            // 先完成切换动画，再局部刷新目标页面数据
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                store.refreshForTab(newValue)
+            }
         }
         .preferredColorScheme(appTheme.colorScheme)
     }
