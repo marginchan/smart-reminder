@@ -16,7 +16,7 @@ struct ReminderListView: View {
     var body: some View {
         ScrollViewReader { scrollProxy in
             List {
-            if store.overdueReminders.isEmpty && store.filteredReminders.isEmpty {
+            if store.overdueReminders.isEmpty && store.expandedFilteredReminders.isEmpty {
                 Section {
                     emptyStateView
                         .listRowInsets(EdgeInsets())
@@ -37,9 +37,9 @@ struct ReminderListView: View {
                 }
                 
                 // 提醒列表（未来 1 年内）
-                if !store.filteredReminders.isEmpty {
-                    Section(header: Text("提醒列表 (\(store.filteredReminders.count))").foregroundColor(.primary)) {
-                        ForEach(store.filteredReminders, id: \.id) { reminder in
+                if !store.expandedFilteredReminders.isEmpty {
+                    Section(header: Text("提醒列表 (\(store.expandedFilteredReminders.count))").foregroundColor(.primary)) {
+                        ForEach(store.expandedFilteredReminders, id: \.id) { reminder in
                             filteredRow(reminder)
                         }
                     }
@@ -72,11 +72,10 @@ struct ReminderListView: View {
                 CategoryManagementView(store: store)
             }
         }
-        .confirmationDialog(
-            "确定要删除「\(reminderToDelete?.title ?? "")」吗？此操作无法撤销。",
-            isPresented: $showingDeleteAlert,
-            titleVisibility: .visible
-        ) {
+        .alert("确认删除", isPresented: $showingDeleteAlert) {
+            Button("取消", role: .cancel) {
+                reminderToDelete = nil
+            }
             Button("删除", role: .destructive) {
                 if let reminder = reminderToDelete {
                     withAnimation(.easeOut(duration: 0.3)) {
@@ -85,9 +84,8 @@ struct ReminderListView: View {
                 }
                 reminderToDelete = nil
             }
-            Button("取消", role: .cancel) {
-                reminderToDelete = nil
-            }
+        } message: {
+            Text("确定要删除「\(reminderToDelete?.title ?? "")」吗？此操作无法撤销。")
         }
         .navigationTitle("提醒")
         .overlay(alignment: .bottomTrailing) {
@@ -137,7 +135,7 @@ struct ReminderListView: View {
 
     @ViewBuilder
     private func filteredRow(_ reminder: Reminder) -> some View {
-        let isFirst = store.overdueReminders.isEmpty && reminder.id == store.filteredReminders.first?.id
+        let isFirst = store.overdueReminders.isEmpty && reminder.id == store.expandedFilteredReminders.first?.id
         ReminderRowView(reminder: reminder, store: store)
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)

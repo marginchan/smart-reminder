@@ -249,10 +249,11 @@ struct DaySectionView: View {
     @Binding var showingAddReminder: Bool
     @Binding var selectedDateForAdd: Date?
     
+    @State private var reminderToDelete: Reminder?
+    @State private var showingDeleteAlert = false
+    
     var reminders: [Reminder] {
-        store.reminders.filter {
-            Calendar.current.isDate($0.dueDate, inSameDayAs: date) && !$0.isCompleted
-        }
+        store.remindersForDate(date)
     }
     
     var body: some View {
@@ -337,14 +338,42 @@ struct DaySectionView: View {
                         .padding(.vertical, 8)
                         .transition(.opacity)
                 } else {
-                    VStack(spacing: 12) {
+                    List {
                         ForEach(reminders) { reminder in
                             ReminderRowView(reminder: reminder, store: store)
-                                .transition(.move(edge: .top).combined(with: .opacity))
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    Button { reminderToDelete = reminder; showingDeleteAlert = true } label: {
+                                        Label("删除", systemImage: "trash")
+                                    }.tint(.red)
+                                }
+                                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                                    Button { withAnimation(.easeOut(duration: 0.3)) { store.toggleComplete(reminder) } } label: {
+                                        Label("完成", systemImage: "checkmark")
+                                    }.tint(.green)
+                                }
                         }
                     }
+                    .listStyle(.plain)
+                    .scrollDisabled(true)
+                    .frame(height: CGFloat(reminders.count) * 80)
                 }
             }
+        }
+        .alert("确认删除", isPresented: $showingDeleteAlert) {
+            Button("取消", role: .cancel) { reminderToDelete = nil }
+            Button("删除", role: .destructive) {
+                if let reminder = reminderToDelete {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        store.deleteReminder(reminder)
+                    }
+                }
+                reminderToDelete = nil
+            }
+        } message: {
+            Text("确定要删除「\(reminderToDelete?.title ?? "")」吗？此操作无法撤销。")
         }
     }
     
@@ -676,6 +705,8 @@ struct CalendarMonthView: View {
     @State private var selectedDate: Date? = nil
     @State private var showingAddReminder = false
     @State private var showScrollToTop = false
+    @State private var reminderToDelete: Reminder?
+    @State private var showingDeleteAlert = false
     
     init(store: ReminderStore) {
         self.store = store
@@ -799,11 +830,27 @@ struct CalendarMonthView: View {
                             .padding(.horizontal)
                             .padding(.top)
                             
-                            ForEach(selectedDayReminders) { reminder in
-                                ReminderRowView(reminder: reminder, store: store)
-                                    .padding(.horizontal)
-                                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                            List {
+                                ForEach(selectedDayReminders) { reminder in
+                                    ReminderRowView(reminder: reminder, store: store)
+                                        .listRowSeparator(.hidden)
+                                        .listRowBackground(Color.clear)
+                                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                            Button { reminderToDelete = reminder; showingDeleteAlert = true } label: {
+                                                Label("删除", systemImage: "trash")
+                                            }.tint(.red)
+                                        }
+                                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                                            Button { withAnimation(.easeOut(duration: 0.3)) { store.toggleComplete(reminder) } } label: {
+                                                Label("完成", systemImage: "checkmark")
+                                            }.tint(.green)
+                                        }
+                                }
                             }
+                            .listStyle(.plain)
+                            .scrollDisabled(true)
+                            .frame(height: CGFloat(selectedDayReminders.count) * 80)
                         } else {
                             VStack(spacing: 20) {
                                 Spacer().frame(height: 40)
@@ -866,10 +913,21 @@ struct CalendarMonthView: View {
             }
             .onChange(of: store.reminders) { oldValue, newValue in
                 if let currentSelected = selectedDate {
-                    selectedDayReminders = newValue.filter {
-                        Calendar.current.isDate($0.dueDate, inSameDayAs: currentSelected)
-                    }
+                    selectedDayReminders = store.remindersForDate(currentSelected)
                 }
+            }
+            .alert("确认删除", isPresented: $showingDeleteAlert) {
+                Button("取消", role: .cancel) { reminderToDelete = nil }
+                Button("删除", role: .destructive) {
+                    if let reminder = reminderToDelete {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            store.deleteReminder(reminder)
+                        }
+                    }
+                    reminderToDelete = nil
+                }
+            } message: {
+                Text("确定要删除「\(reminderToDelete?.title ?? "")」吗？此操作无法撤销。")
             }
         }
     }
@@ -877,7 +935,7 @@ struct CalendarMonthView: View {
     private func selectDay(_ date: Date) {
         withAnimation {
             selectedDate = date
-            selectedDayReminders = store.reminders.filter { Calendar.current.isDate($0.dueDate, inSameDayAs: date) }
+            selectedDayReminders = store.remindersForDate(date)
         }
     }
     
@@ -968,7 +1026,7 @@ struct DayCell: View {
     let isSelected: Bool
     
     var remindersCount: Int {
-        store.reminders.filter { Calendar.current.isDate($0.dueDate, inSameDayAs: date) && !$0.isCompleted }.count
+        store.remindersForDate(date).count
     }
     
     var isToday: Bool { Calendar.current.isDateInToday(date) }

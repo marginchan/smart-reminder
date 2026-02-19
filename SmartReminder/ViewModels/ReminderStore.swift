@@ -396,6 +396,154 @@ class ReminderStore: ObservableObject {
         }.sorted { $0.dueDate < $1.dueDate }
     }
     
+    // MARK: - Recurring Reminder Expansion
+    
+    /// 为重复提醒生成未来 1 年内的所有虚拟日期
+    private func generateOccurrenceDates(for reminder: Reminder) -> [Date] {
+        guard reminder.repeatFrequency != .never,
+              let component = reminder.repeatFrequency.calendarComponent else {
+            return []
+        }
+        
+        let calendar = Calendar.current
+        let now = Date()
+        let maxDate: Date
+        
+        switch reminder.repeatFrequency {
+        case .yearly:
+            maxDate = calendar.date(byAdding: .year, value: 3, to: now) ?? now
+        default:
+            maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
+        }
+        
+        var dates: [Date] = []
+        var occurrence = reminder.dueDate
+        var count = 1
+        
+        while count <= 500 { // 安全上限
+            guard let next = calendar.date(byAdding: component, value: count, to: reminder.dueDate) else { break }
+            if next > maxDate { break }
+            if next > now || calendar.isDate(next, inSameDayAs: now) {
+                dates.append(next)
+            }
+            count += 1
+        }
+        
+        return dates
+    }
+    
+    /// 返回某天所有提醒（含重复提醒的虚拟实例）
+    func remindersForDate(_ date: Date) -> [Reminder] {
+        let calendar = Calendar.current
+        
+        // 1. 原始提醒：dueDate 就在这一天的
+        var result = reminders.filter {
+            calendar.isDate($0.dueDate, inSameDayAs: date) && !$0.isCompleted
+        }
+        
+        // 2. 重复提醒的虚拟实例
+        let recurringReminders = reminders.filter {
+            $0.repeatFrequency != .never && !$0.isCompleted
+        }
+        
+        for reminder in recurringReminders {
+            // 原始日期已经在上面处理了，跳过
+            if calendar.isDate(reminder.dueDate, inSameDayAs: date) { continue }
+            
+            // 检查该日期是否是这个重复提醒的某个实例
+            if isOccurrenceDate(date, for: reminder) {
+                result.append(reminder)
+            }
+        }
+        
+        return result.sorted { $0.dueDate < $1.dueDate }
+    }
+    
+    /// 快速判断某天是否是某个重复提醒的实例日期（不生成所有日期）
+    private func isOccurrenceDate(_ date: Date, for reminder: Reminder) -> Bool {
+        guard reminder.repeatFrequency != .never,
+              let component = reminder.repeatFrequency.calendarComponent else {
+            return false
+        }
+        
+        let calendar = Calendar.current
+        let reminderDate = calendar.startOfDay(for: reminder.dueDate)
+        let targetDate = calendar.startOfDay(for: date)
+        
+        // 目标日期必须在原始日期之后
+        guard targetDate > reminderDate else { return false }
+        
+        switch reminder.repeatFrequency {
+        case .daily:
+            return true // 每天都是
+        case .weekly:
+            return calendar.component(.weekday, from: reminderDate) == calendar.component(.weekday, from: targetDate)
+        case .monthly:
+            return calendar.component(.day, from: reminderDate) == calendar.component(.day, from: targetDate)
+        case .yearly:
+            let rComps = calendar.dateComponents([.month, .day], from: reminderDate)
+            let tComps = calendar.dateComponents([.month, .day], from: targetDate)
+            return rComps.month == tComps.month && rComps.day == tComps.day
+        case .never:
+            return false
+        }
+    }
+    
+    /// filteredReminders 的增强版，包含重复提醒的未来实例
+    var expandedFilteredReminders: [Reminder] {
+        var result = filteredReminders
+        
+        // 获取所有未完成的重复提醒
+        let recurringReminders = reminders.filter {
+            $0.repeatFrequency != .never && !$0.isCompleted
+        }
+        
+        let calendar = Calendar.current
+        
+        for reminder in recurringReminders {
+            let futureDates = generateOccurrenceDates(for: reminder)
+            for date in futureDates {
+                // 避免与已有的 filteredReminders 重复（原始 dueDate）
+                if !result.contains(where: { $0.id == reminder.id && calendar.isDate($0.dueDate, inSameDayAs: date) }) {
+                    // 使用确定性 UUID：基于原始 ID + 日期，确保 SwiftUI 列表稳定
+                    let dateString = "\(calendar.component(.year, from: date))-\(calendar.component(.month, from: date))-\(calendar.component(.day, from: date))"
+                    let stableID = UUID(uuidString: stableUUIDString(from: reminder.id.uuidString + dateString))
+                        ?? UUID()
+                    
+                    let virtualReminder = Reminder(
+                        id: stableID,
+                        title: reminder.title,
+                        notes: reminder.notes,
+                        dueDate: date,
+                        priority: reminder.priority,
+                        category: reminder.category,
+                        repeatFrequency: reminder.repeatFrequency
+                    )
+                    result.append(virtualReminder)
+                }
+            }
+        }
+        
+        // 重新排序
+        result.sort { $0.dueDate < $1.dueDate }
+        
+        return result
+    }
+    
+    /// 基于输入字符串生成确定性 UUID 字符串
+    private func stableUUIDString(from input: String) -> String {
+        var hash = [UInt8](repeating: 0, count: 16)
+        let data = Array(input.utf8)
+        for (i, byte) in data.enumerated() {
+            hash[i % 16] ^= byte
+            hash[i % 16] = hash[i % 16] &+ byte
+        }
+        // 格式化为 UUID 字符串
+        let hex = hash.map { String(format: "%02x", $0) }.joined()
+        let uuid = "\(hex.prefix(8))-\(hex.dropFirst(8).prefix(4))-\(hex.dropFirst(12).prefix(4))-\(hex.dropFirst(16).prefix(4))-\(hex.dropFirst(20).prefix(12))"
+        return uuid
+    }
+    
     // MARK: - Natural Language Processing
     
     struct ParsedReminder {
