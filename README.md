@@ -138,14 +138,6 @@ var priorityColor: Color {
 }
 ```
 
-## 开发计划
-
-- [ ] iCloud 同步
-- [ ] 小组件支持
-- [ ] Siri 快捷指令
-- [ ] 语音输入提醒
-- [ ] 智能推荐
-
 ## 许可证
 
 MIT License
