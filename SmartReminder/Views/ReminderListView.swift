@@ -324,29 +324,27 @@ struct GarfieldGameView: View {
                     )
                 
                 // Body
-                Circle()
+                Ellipse()
                     .fill(garfieldOrange)
-                    .frame(width: 170, height: 160)
-                    .offset(y: 35)
+                    .frame(width: 130, height: 110)
+                    .offset(y: 45)
                     .scaleEffect(y: isBreathing ? 1.02 : 0.98, anchor: .bottom)
-                    // Body Stripes (Back)
+                    // Small side stripes
                     .overlay(
-                        VStack(spacing: 12) {
-                            Capsule().fill(Color.black.opacity(0.6)).frame(width: 40, height: 6)
-                            Capsule().fill(Color.black.opacity(0.6)).frame(width: 50, height: 6)
-                            Capsule().fill(Color.black.opacity(0.6)).frame(width: 40, height: 6)
+                        VStack(spacing: 10) {
+                            Capsule().fill(Color.black.opacity(0.5)).frame(width: 20, height: 4)
+                            Capsule().fill(Color.black.opacity(0.5)).frame(width: 30, height: 4)
                         }
-                        .offset(x: -60, y: 20)
-                        .rotationEffect(.degrees(-15))
+                        .offset(x: -55, y: 30)
+                        .rotationEffect(.degrees(-25))
                     )
                     .overlay(
-                        VStack(spacing: 12) {
-                            Capsule().fill(Color.black.opacity(0.6)).frame(width: 40, height: 6)
-                            Capsule().fill(Color.black.opacity(0.6)).frame(width: 50, height: 6)
-                            Capsule().fill(Color.black.opacity(0.6)).frame(width: 40, height: 6)
+                        VStack(spacing: 10) {
+                            Capsule().fill(Color.black.opacity(0.5)).frame(width: 20, height: 4)
+                            Capsule().fill(Color.black.opacity(0.5)).frame(width: 30, height: 4)
                         }
-                        .offset(x: 60, y: 20)
-                        .rotationEffect(.degrees(15))
+                        .offset(x: 55, y: 30)
+                        .rotationEffect(.degrees(25))
                     )
                     .gesture(
                         DragGesture(minimumDistance: 0)
@@ -354,91 +352,94 @@ struct GarfieldGameView: View {
                     )
                     .onTapGesture { pokeBelly() }
                 
-                // Feet
-                HStack(spacing: 50) {
-                    Capsule().fill(garfieldOrange).frame(width: 40, height: 25).offset(y: 105)
-                    Capsule().fill(garfieldOrange).frame(width: 40, height: 25).offset(y: 105)
+                // Feet (smaller and closer)
+                HStack(spacing: 30) {
+                    Capsule().fill(garfieldOrange).frame(width: 30, height: 20).offset(y: 100)
+                    Capsule().fill(garfieldOrange).frame(width: 30, height: 20).offset(y: 100)
                 }
                 
                 // Head
                 ZStack {
-                    // Ears (Cute young rounded style)
-                    HStack(spacing: 50) {
+                    // Ears (Kitten style, closer together, soft triangles)
+                    HStack(spacing: 40) {
                         Path { path in
                             path.move(to: CGPoint(x: 0, y: 15))
-                            path.addQuadCurve(to: CGPoint(x: 10, y: -25), control: CGPoint(x: -5, y: -10))
-                            path.addQuadCurve(to: CGPoint(x: 35, y: 15), control: CGPoint(x: 30, y: -15))
+                            path.addQuadCurve(to: CGPoint(x: 10, y: -20), control: CGPoint(x: -5, y: -10))
+                            path.addQuadCurve(to: CGPoint(x: 30, y: 15), control: CGPoint(x: 25, y: -10))
                         }
                         .fill(garfieldOrange)
-                        .frame(width: 35, height: 40)
+                        .frame(width: 30, height: 35)
                         
                         Path { path in
                             path.move(to: CGPoint(x: 0, y: 15))
-                            path.addQuadCurve(to: CGPoint(x: 25, y: -25), control: CGPoint(x: 5, y: -15))
-                            path.addQuadCurve(to: CGPoint(x: 35, y: 15), control: CGPoint(x: 40, y: -10))
+                            path.addQuadCurve(to: CGPoint(x: 20, y: -20), control: CGPoint(x: 5, y: -10))
+                            path.addQuadCurve(to: CGPoint(x: 30, y: 15), control: CGPoint(x: 35, y: -10))
                         }
                         .fill(garfieldOrange)
-                        .frame(width: 35, height: 40)
+                        .frame(width: 30, height: 35)
                     }
-                    .offset(y: -75)
+                    .offset(y: -65)
                     
-                    // Head shape
+                    // Head shape (rounder and larger relative to body)
                     Ellipse()
                         .fill(garfieldOrange)
-                        .frame(width: 140, height: 110)
-                        .offset(y: -20)
+                        .frame(width: 140, height: 120)
+                        .offset(y: -10)
                     
-                    // Head Stripes
+                    // Head Stripes (just two small cute ones on top)
                     VStack(spacing: 6) {
-                        Capsule().fill(Color.black.opacity(0.6)).frame(width: 15, height: 4)
-                        Capsule().fill(Color.black.opacity(0.6)).frame(width: 25, height: 4)
-                        Capsule().fill(Color.black.opacity(0.6)).frame(width: 15, height: 4)
+                        Capsule().fill(Color.black.opacity(0.5)).frame(width: 15, height: 4)
+                        Capsule().fill(Color.black.opacity(0.5)).frame(width: 25, height: 4)
                     }
                     .offset(y: -55)
                     
-                    // Eyes Background (Bigger, rounder, younger)
-                    HStack(spacing: -5) {
-                        Ellipse()
+                    // Eyes Background (Bigger, rounder, placed lower down for baby proportions)
+                    HStack(spacing: -2) {
+                        Circle()
                             .fill(Color.white)
-                            .frame(width: 55, height: 65)
-                            .overlay(Ellipse().stroke(Color.black, lineWidth: 1))
-                        Ellipse()
+                            .frame(width: 50, height: 50)
+                            .overlay(Circle().stroke(Color.black, lineWidth: 1.5))
+                        Circle()
                             .fill(Color.white)
-                            .frame(width: 55, height: 65)
-                            .overlay(Ellipse().stroke(Color.black, lineWidth: 1))
+                            .frame(width: 50, height: 50)
+                            .overlay(Circle().stroke(Color.black, lineWidth: 1.5))
                     }
-                    .offset(y: -25)
+                    .offset(y: -5)
                     
-                    // Pupils (Bigger)
-                    HStack(spacing: 25) {
+                    // Pupils (Bigger and cuter)
+                    HStack(spacing: 16) {
                         Circle()
                             .fill(Color.black)
-                            .frame(width: 14, height: 14)
+                            .frame(width: 18, height: 18)
+                            .overlay(
+                                Circle().fill(Color.white).frame(width: 6, height: 6).offset(x: 3, y: -3)
+                            )
                             .offset(eyesOffset)
                         Circle()
                             .fill(Color.black)
-                            .frame(width: 14, height: 14)
+                            .frame(width: 18, height: 18)
+                            .overlay(
+                                Circle().fill(Color.white).frame(width: 6, height: 6).offset(x: 3, y: -3)
+                            )
                             .offset(eyesOffset)
                     }
-                    .offset(y: -20)
+                    .offset(y: -5)
                     
                     // Eyelids (Lazy/Half-closed)
                     if state == .sleeping {
-                        HStack(spacing: -5) {
-                            Rectangle()
+                        HStack(spacing: -2) {
+                            Circle()
                                 .fill(garfieldOrange)
-                                .frame(width: 55, height: 65)
-                                .mask(Ellipse().frame(width: 55, height: 65))
+                                .frame(width: 50, height: 50)
                                 .overlay(
                                     VStack {
                                         Spacer()
                                         Rectangle().fill(Color.black).frame(height: 2)
                                     }
                                 )
-                            Rectangle()
+                            Circle()
                                 .fill(garfieldOrange)
-                                .frame(width: 55, height: 65)
-                                .mask(Ellipse().frame(width: 55, height: 65))
+                                .frame(width: 50, height: 50)
                                 .overlay(
                                     VStack {
                                         Spacer()
@@ -446,86 +447,84 @@ struct GarfieldGameView: View {
                                     }
                                 )
                         }
-                        .offset(y: -25)
+                        .offset(y: -5)
                     } else if state != .annoyed && state != .happy {
-                        // Half closed (less lazy for younger look)
-                        HStack(spacing: -5) {
+                        // Wide awake mostly, just a tiny sliver of eyelid for cuteness
+                        HStack(spacing: -2) {
                             Rectangle()
                                 .fill(garfieldOrange)
-                                .frame(width: 55, height: 20) // Covers top slightly
-                                .mask(Ellipse().frame(width: 55, height: 65).offset(y: -22.5))
+                                .frame(width: 50, height: 10)
+                                .mask(Circle().frame(width: 50, height: 50).offset(y: -20))
                                 .overlay(VStack { Spacer(); Rectangle().fill(Color.black).frame(height: 1) })
                             Rectangle()
                                 .fill(garfieldOrange)
-                                .frame(width: 55, height: 20)
-                                .mask(Ellipse().frame(width: 55, height: 65).offset(y: -22.5))
+                                .frame(width: 50, height: 10)
+                                .mask(Circle().frame(width: 50, height: 50).offset(y: -20))
                                 .overlay(VStack { Spacer(); Rectangle().fill(Color.black).frame(height: 1) })
-                        }
-                        .offset(y: -47.5)
-                    } else if state == .happy {
-                        // Happy eyes (completely covered with ^ shape)
-                        HStack(spacing: -5) {
-                            Ellipse().fill(garfieldOrange).frame(width: 55, height: 65)
-                                .overlay(
-                                    Path { path in
-                                        path.move(to: CGPoint(x: 10, y: 35))
-                                        path.addQuadCurve(to: CGPoint(x: 45, y: 35), control: CGPoint(x: 27.5, y: 15))
-                                    }.stroke(Color.black, lineWidth: 3)
-                                )
-                            Ellipse().fill(garfieldOrange).frame(width: 55, height: 65)
-                                .overlay(
-                                    Path { path in
-                                        path.move(to: CGPoint(x: 10, y: 35))
-                                        path.addQuadCurve(to: CGPoint(x: 45, y: 35), control: CGPoint(x: 27.5, y: 15))
-                                    }.stroke(Color.black, lineWidth: 3)
-                                )
                         }
                         .offset(y: -25)
+                    } else if state == .happy {
+                        // Happy eyes (fully covered with cute ^ shape)
+                        HStack(spacing: -2) {
+                            Circle().fill(garfieldOrange).frame(width: 50, height: 50)
+                                .overlay(
+                                    Path { path in
+                                        path.move(to: CGPoint(x: 10, y: 25))
+                                        path.addQuadCurve(to: CGPoint(x: 40, y: 25), control: CGPoint(x: 25, y: 10))
+                                    }.stroke(Color.black, lineWidth: 2.5)
+                                )
+                            Circle().fill(garfieldOrange).frame(width: 50, height: 50)
+                                .overlay(
+                                    Path { path in
+                                        path.move(to: CGPoint(x: 10, y: 25))
+                                        path.addQuadCurve(to: CGPoint(x: 40, y: 25), control: CGPoint(x: 25, y: 10))
+                                    }.stroke(Color.black, lineWidth: 2.5)
+                                )
+                        }
+                        .offset(y: -5)
                     }
                     
-                    // Muzzle (Yellow area)
-                    HStack(spacing: -10) {
+                    // Muzzle (Yellow area) - smaller for a kitten
+                    HStack(spacing: -5) {
                         Ellipse()
                             .fill(garfieldYellow)
-                            .frame(width: 55, height: 45)
+                            .frame(width: 40, height: 35)
                         Ellipse()
                             .fill(garfieldYellow)
-                            .frame(width: 55, height: 45)
+                            .frame(width: 40, height: 35)
                     }
-                    .offset(y: 15)
+                    .offset(y: 20)
                     
-                    // Nose
-                    Ellipse()
+                    // Nose - tiny and cute pink triangle/circle
+                    Circle()
                         .fill(Color.pink)
-                        .frame(width: 16, height: 12)
-                        .offset(y: 0)
+                        .frame(width: 12, height: 10)
+                        .offset(y: 8)
                     
                     // Mouth
                     if state == .eating {
                         Circle()
                             .trim(from: 0.5, to: 1.0)
                             .fill(Color.black.opacity(0.8))
-                            .frame(width: 30, height: 30)
+                            .frame(width: 20, height: 20)
                             .rotationEffect(.degrees(180))
-                            .offset(y: 20)
+                            .offset(y: 25)
                     } else {
                         Path { path in
-                            path.move(to: CGPoint(x: -15, y: 25))
-                            path.addQuadCurve(to: CGPoint(x: 0, y: 30), control: CGPoint(x: -10, y: 32))
-                            path.addQuadCurve(to: CGPoint(x: 15, y: 25), control: CGPoint(x: 10, y: 32))
+                            path.move(to: CGPoint(x: -10, y: 25))
+                            path.addQuadCurve(to: CGPoint(x: 0, y: 28), control: CGPoint(x: -5, y: 30))
+                            path.addQuadCurve(to: CGPoint(x: 10, y: 25), control: CGPoint(x: 5, y: 30))
                         }
-                        .stroke(Color.black, lineWidth: 2)
+                        .stroke(Color.black, lineWidth: 1.5)
                     }
                     
-                    // Whiskers
+                    // Whiskers (just two small ones per side)
                     Group {
-                        Path { path in path.move(to: CGPoint(x: -35, y: 15)); path.addLine(to: CGPoint(x: -70, y: 10)) }.stroke(Color.black, lineWidth: 1)
-                        Path { path in path.move(to: CGPoint(x: -35, y: 20)); path.addLine(to: CGPoint(x: -70, y: 20)) }.stroke(Color.black, lineWidth: 1)
-                        Path { path in path.move(to: CGPoint(x: -35, y: 25)); path.addLine(to: CGPoint(x: -70, y: 30)) }.stroke(Color.black, lineWidth: 1)
+                        Path { path in path.move(to: CGPoint(x: -35, y: 20)); path.addLine(to: CGPoint(x: -55, y: 15)) }.stroke(Color.black.opacity(0.5), lineWidth: 1)
+                        Path { path in path.move(to: CGPoint(x: -35, y: 25)); path.addLine(to: CGPoint(x: -55, y: 25)) }.stroke(Color.black.opacity(0.5), lineWidth: 1)
                         
-                        Path { path in path.move(to: CGPoint(x: 35, y: 15)); path.addLine(to: CGPoint(x: 70, y: 10)) }.stroke(Color.black, lineWidth: 1)
-                        Path { path in path.move(to: CGPoint(x: 35, y: 20)); path.addLine(to: CGPoint(x: 70, y: 20)) }.stroke(Color.black, lineWidth: 1)
-                        Path { path in path.move(to: CGPoint(x: 35, y: 25)); path.addLine(to: CGPoint(x: 70, y: 30)) }.stroke(Color.black, lineWidth: 1)
+                        Path { path in path.move(to: CGPoint(x: 35, y: 20)); path.addLine(to: CGPoint(x: 55, y: 15)) }.stroke(Color.black.opacity(0.5), lineWidth: 1)
+                        Path { path in path.move(to: CGPoint(x: 35, y: 25)); path.addLine(to: CGPoint(x: 55, y: 25)) }.stroke(Color.black.opacity(0.5), lineWidth: 1)
                     }
                 }
                 .rotationEffect(.degrees(state == .sleeping ? 5 : 0))
@@ -535,11 +534,11 @@ struct GarfieldGameView: View {
                     Text("Zzz")
                         .font(.system(size: 24, weight: .bold))
                         .foregroundColor(.gray)
-                        .offset(x: 80, y: -80)
+                        .offset(x: 60, y: -70)
                 } else if state == .annoyed {
                     Text("💢")
                         .font(.system(size: 32))
-                        .offset(x: 70, y: -70)
+                        .offset(x: 50, y: -60)
                 }
                 
                 // Floating Hearts
