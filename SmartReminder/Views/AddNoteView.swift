@@ -116,11 +116,14 @@ struct AddNoteView: View {
             selectedColor = color
         } label: {
             Circle()
-                .fill(Color.fromHex( color))
+                .fill(Color.fromHex(color))
                 .frame(width: 44, height: 44)
                 .overlay(
                     Circle()
-                        .stroke(selectedColor == color ? Color.primary : Color.clear, lineWidth: 3)
+                        .stroke(Color.fromHex(color), lineWidth: selectedColor == color ? 3 : 0)
+                        .scaleEffect(selectedColor == color ? 1.2 : 1.0)
+                        .opacity(selectedColor == color ? 0.5 : 0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedColor)
                 )
         }
         .buttonStyle(.plain) // 确保点击区域正确

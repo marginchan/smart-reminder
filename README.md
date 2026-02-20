@@ -35,20 +35,33 @@
 ```
 SmartReminder/
 ├── SmartReminder/
-│   ├── SmartReminderApp.swift    # App 入口
+│   ├── SmartReminderApp.swift        # App 入口
 │   ├── Models/
-│   │   ├── Reminder.swift        # 提醒数据模型
-│   │   └── Category.swift        # 分类数据模型
+│   │   ├── Reminder.swift            # 提醒数据模型
+│   │   ├── Category.swift            # 分类数据模型
+│   │   └── Note.swift                # 便签数据模型
 │   ├── ViewModels/
-│   │   └── ReminderStore.swift   # 数据管理
+│   │   └── ReminderStore.swift       # 核心业务与数据管理
 │   ├── Views/
-│   │   ├── ContentView.swift     # 主界面（TabView）
-│   │   ├── ReminderListView.swift    # 提醒列表
-│   │   ├── ReminderRowView.swift     # 提醒行
-│   │   ├── AddReminderView.swift     # 添加/编辑提醒
-│   │   └── CategoryManagementView.swift  # 分类管理
+│   │   ├── ContentView.swift         # 主界面（导航与底层结构）
+│   │   ├── ReminderListView.swift    # 分类/时间维度提醒列表
+│   │   ├── ReminderRowView.swift     # 提醒单行组件
+│   │   ├── AddReminderView.swift     # 新建/编辑提醒表单
+│   │   ├── CategoryManagementView.swift # 分类管理弹窗
+│   │   ├── NotesView.swift           # 便签瀑布流列表
+│   │   ├── AddNoteView.swift         # 新建/编辑便签
+│   │   └── ToastView.swift           # 全局轻提示组件
 │   └── Services/
-│       └── NotificationManager.swift  # 通知管理
+│       ├── NotificationManager.swift # 本地推送通知管理
+│       └── LunarFestivalService.swift# 农历与节日计算服务
+├── openspec/                         # OpenSpec 项目级配置与规范
+│   ├── project.md
+│   └── config.yaml
+└── specs/                            # 功能与场景行为需求规范
+    ├── calendar-view.md
+    ├── category-management.md
+    ├── notes-search.md
+    └── reminder-core.md
 ```
 
 ## 使用方法
@@ -139,7 +152,7 @@ MIT License
 
 ## 作者
 
-由 AI 助手创建
+marginchan
 
 ---
 
