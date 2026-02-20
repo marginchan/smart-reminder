@@ -73,19 +73,37 @@ struct ReminderListView: View {
             }
         }
         .alert("确认删除", isPresented: $showingDeleteAlert) {
-            Button("取消", role: .cancel) {
-                reminderToDelete = nil
-            }
-            Button("删除", role: .destructive) {
-                if let reminder = reminderToDelete {
+            if let reminder = reminderToDelete, reminder.repeatFrequency != .never {
+                Button("仅删除本次", role: .destructive) {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        store.deleteOccurrence(of: reminder)
+                    }
+                    reminderToDelete = nil
+                }
+                Button("删除整个系列", role: .destructive) {
                     withAnimation(.easeOut(duration: 0.3)) {
                         store.deleteReminder(reminder)
                     }
+                    reminderToDelete = nil
                 }
-                reminderToDelete = nil
+                Button("取消", role: .cancel) { reminderToDelete = nil }
+            } else {
+                Button("取消", role: .cancel) { reminderToDelete = nil }
+                Button("删除", role: .destructive) {
+                    if let reminder = reminderToDelete {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            store.deleteReminder(reminder)
+                        }
+                    }
+                    reminderToDelete = nil
+                }
             }
         } message: {
-            Text("确定要删除「\(reminderToDelete?.title ?? "")」吗？此操作无法撤销。")
+            if let reminder = reminderToDelete, reminder.repeatFrequency != .never {
+                Text("这是一个重复提醒。「仅删除本次」将保留其他日期的提醒，而「删除整个系列」将永久删除所有相关提醒。")
+            } else {
+                Text("确定要删除「\(reminderToDelete?.title ?? "")」吗？此操作无法撤销。")
+            }
         }
         .navigationTitle("提醒")
         .overlay(alignment: .bottomTrailing) {

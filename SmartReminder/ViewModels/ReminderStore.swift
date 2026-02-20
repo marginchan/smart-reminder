@@ -121,11 +121,30 @@ class ReminderStore: ObservableObject {
     
     func deleteReminder(_ reminder: Reminder) {
         guard let context = modelContext else { return }
-        cancelNotification(for: reminder)
-        context.delete(reminder)
+        let targetId = reminder.originalReminderId ?? reminder.id
+        guard let original = reminders.first(where: { $0.id == targetId }) else { return }
+        
+        cancelNotification(for: original)
+        context.delete(original)
         save()
         fetchReminders()
         notificationManager.clearBadge()
+    }
+    
+    func deleteOccurrence(of reminder: Reminder) {
+        let targetId = reminder.originalReminderId ?? reminder.id
+        guard let original = reminders.first(where: { $0.id == targetId }) else { return }
+        
+        let dateToExclude = Calendar.current.startOfDay(for: reminder.dueDate)
+        var newExcluded = original.excludedDates ?? []
+        newExcluded.append(dateToExclude)
+        original.excludedDates = newExcluded
+        
+        save()
+        fetchReminders()
+        
+        cancelNotification(for: original)
+        scheduleNotification(for: original)
     }
     
     func toggleComplete(_ reminder: Reminder) {
@@ -424,7 +443,9 @@ class ReminderStore: ObservableObject {
             guard let next = calendar.date(byAdding: component, value: count, to: reminder.dueDate) else { break }
             if next > maxDate { break }
             if next > now || calendar.isDate(next, inSameDayAs: now) {
-                dates.append(next)
+                if !isExcluded(next, in: reminder.excludedDates) {
+                    dates.append(next)
+                }
             }
             count += 1
         }
@@ -470,8 +491,9 @@ class ReminderStore: ObservableObject {
         let reminderDate = calendar.startOfDay(for: reminder.dueDate)
         let targetDate = calendar.startOfDay(for: date)
         
-        // 目标日期必须在原始日期之后
+        // 目标日期必须在原始日期之后且未被排除
         guard targetDate > reminderDate else { return false }
+        if isExcluded(targetDate, in: reminder.excludedDates) { return false }
         
         switch reminder.repeatFrequency {
         case .daily:
@@ -487,6 +509,13 @@ class ReminderStore: ObservableObject {
         case .never:
             return false
         }
+    }
+    
+    // 检查日期是否在排除列表中
+    private func isExcluded(_ date: Date, in excludedDates: [Date]?) -> Bool {
+        guard let excluded = excludedDates else { return false }
+        let calendar = Calendar.current
+        return excluded.contains(where: { calendar.isDate($0, inSameDayAs: date) })
     }
     
     /// filteredReminders 的增强版，包含重复提醒的未来实例
@@ -517,7 +546,9 @@ class ReminderStore: ObservableObject {
                         dueDate: date,
                         priority: reminder.priority,
                         category: reminder.category,
-                        repeatFrequency: reminder.repeatFrequency
+                        repeatFrequency: reminder.repeatFrequency,
+                        excludedDates: reminder.excludedDates,
+                        originalReminderId: reminder.id
                     )
                     result.append(virtualReminder)
                 }

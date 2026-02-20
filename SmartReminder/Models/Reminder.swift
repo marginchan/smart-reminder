@@ -19,6 +19,9 @@ class Reminder {
     var createdAt: Date
     var notificationIdentifier: String?
     
+    var excludedDates: [Date]?
+    @Transient var originalReminderId: UUID?
+    
     init(
         id: UUID = UUID(),
         title: String,
@@ -27,7 +30,9 @@ class Reminder {
         isCompleted: Bool = false,
         priority: Priority = .medium,
         category: ReminderCategory? = nil,
-        repeatFrequency: RepeatFrequency = .never
+        repeatFrequency: RepeatFrequency = .never,
+        excludedDates: [Date]? = nil,
+        originalReminderId: UUID? = nil
     ) {
         self.id = id
         self.title = title
@@ -39,6 +44,8 @@ class Reminder {
         self.repeatFrequency = repeatFrequency
         self.createdAt = Date()
         self.notificationIdentifier = id.uuidString
+        self.excludedDates = excludedDates
+        self.originalReminderId = originalReminderId
     }
 }
 
