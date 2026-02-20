@@ -23,8 +23,60 @@ class ReminderStore: ObservableObject {
     @Published var showCompleted: Bool = true
     @Published var noteSearchText: String = ""
     
+    @Published var overdueReminders: [Reminder] = []
+    @Published var expandedFilteredReminders: [Reminder] = []
+    @Published var todayReminders: [Reminder] = []
+    @Published var upcomingReminders: [Reminder] = []
+    @Published var completedReminders: [Reminder] = []
+    
     var modelContext: ModelContext?
     private let notificationManager = NotificationManager.shared
+    private var cancellables = Set<AnyCancellable>()
+    
+    init() {
+        setupObservations()
+    }
+    
+    private func setupObservations() {
+        // 监听影响提醒列表的所有属性，并在变化时更新缓存
+        Publishers.CombineLatest4($reminders, $searchText, $selectedCategory, $selectedPriority)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.updateFilteredReminders()
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func updateFilteredReminders() {
+        let now = Date()
+        let calendar = Calendar.current
+        let oneYearLater = calendar.date(byAdding: .year, value: 1, to: now) ?? now
+        
+        // 直接从基础过滤结果中拆分出逾期和未来提醒，不再进行昂贵的虚拟日期展开计算
+        let baseList = baseFilteredReminders
+        
+        self.overdueReminders = baseList.filter { $0.dueDate < now }
+            .sorted { r1, r2 in
+                if r1.dueDate == r2.dueDate { return r1.createdAt < r2.createdAt }
+                return r1.dueDate < r2.dueDate
+            }
+        
+        self.expandedFilteredReminders = baseList.filter { $0.dueDate >= now && $0.dueDate <= oneYearLater }
+            .sorted { r1, r2 in
+                if r1.dueDate == r2.dueDate { return r1.createdAt < r2.createdAt }
+                return r1.dueDate < r2.dueDate
+            }
+        
+        self.todayReminders = reminders.filter { reminder in
+            calendar.isDate(reminder.dueDate, inSameDayAs: now) && !reminder.isCompleted
+        }.sorted { r1, r2 in
+            if r1.dueDate == r2.dueDate { return r1.createdAt < r2.createdAt }
+            return r1.dueDate < r2.dueDate
+        }
+        
+        self.upcomingReminders = reminders.filter { $0.dueDate > now && !$0.isCompleted }
+        self.completedReminders = reminders.filter { $0.isCompleted }
+    }
     
     // 标记是否已初始化示例数据
     private let hasInitializedSampleDataKey = "hasInitializedSampleData"
@@ -72,7 +124,7 @@ class ReminderStore: ObservableObject {
     func fetchReminders() {
         guard let context = modelContext else { return }
         
-        let descriptor = FetchDescriptor<Reminder>()
+        let descriptor = FetchDescriptor<Reminder>(sortBy: [SortDescriptor(\.dueDate, order: .forward)])
         reminders = (try? context.fetch(descriptor)) ?? []
     }
     
@@ -148,7 +200,38 @@ class ReminderStore: ObservableObject {
     }
     
     func toggleComplete(_ reminder: Reminder) {
-        reminder.isCompleted.toggle()
+        let isVirtual = reminder.originalReminderId != nil
+        
+        if !reminder.isCompleted && reminder.repeatFrequency != .never {
+            let targetId = reminder.originalReminderId ?? reminder.id
+            if let original = reminders.first(where: { $0.id == targetId }) {
+                let completedClone = Reminder(
+                    title: original.title,
+                    notes: original.notes,
+                    dueDate: reminder.dueDate,
+                    isCompleted: true,
+                    priority: original.priority,
+                    category: original.category,
+                    repeatFrequency: .never,
+                    createdAt: original.createdAt
+                )
+                modelContext?.insert(completedClone)
+                
+                if isVirtual {
+                    var newExcluded = original.excludedDates ?? []
+                    newExcluded.append(Calendar.current.startOfDay(for: reminder.dueDate))
+                    original.excludedDates = newExcluded
+                } else {
+                    if let component = original.repeatFrequency.calendarComponent,
+                       let nextDate = Calendar.current.date(byAdding: component, value: 1, to: original.dueDate) {
+                        original.dueDate = nextDate
+                    }
+                }
+            }
+        } else {
+            reminder.isCompleted.toggle()
+        }
+        
         save()
         fetchReminders()
         
@@ -343,10 +426,9 @@ class ReminderStore: ObservableObject {
     
     // MARK: - Filtered Reminders
     
-    var filteredReminders: [Reminder] {
-        var result = reminders
+    private var baseFilteredReminders: [Reminder] {
+        var result = reminders.filter { !$0.isCompleted }
         
-        // 搜索过滤
         if !searchText.isEmpty {
             result = result.filter {
                 $0.title.localizedCaseInsensitiveContains(searchText) ||
@@ -354,71 +436,78 @@ class ReminderStore: ObservableObject {
             }
         }
         
-        // 分类过滤
         if let category = selectedCategory {
             result = result.filter { $0.category?.id == category.id }
         }
         
-        // 优先级过滤
         if let priority = selectedPriority {
             result = result.filter { $0.priority == priority }
         }
         
-        // 完成状态过滤 - 首页不显示已完成的提醒
-        result = result.filter { !$0.isCompleted }
-        
-        // 仅展示当前时间之后、未来 1 年内的提醒（首页提醒列表）
-        // 当天已逾期的提醒由 overdueReminders 单独展示，这里不重复
-        let now = Date()
-        let oneYearLater = Calendar.current.date(byAdding: .year, value: 1, to: now) ?? now
-        result = result.filter { $0.dueDate >= now && $0.dueDate <= oneYearLater }
-        
-        // 按时间排序：未完成的在前，最近的时间排在最上面
-        result.sort { r1, r2 in
-            if r1.isCompleted != r2.isCompleted {
-                return !r1.isCompleted
-            }
-            return r1.dueDate < r2.dueDate
-        }
-        
         return result
     }
     
-    var todayReminders: [Reminder] {
+    private var calculateAllExpandedFilteredReminders: [Reminder] {
+        var result = baseFilteredReminders
+        
+        let recurringReminders = result.filter { $0.repeatFrequency != .never }
         let calendar = Calendar.current
-        var result = reminders.filter { reminder in
-            calendar.isDate(reminder.dueDate, inSameDayAs: Date()) && !reminder.isCompleted
+        let now = Date()
+        // Limit generation to 1 year from now
+        let oneYearLater = calendar.date(byAdding: .year, value: 1, to: now) ?? now
+        
+        // Optimization: Use a Set for O(1) lookup of existing dates
+        // Key format: "ReminderID_Year-Month-Day"
+        var existingKeys = Set<String>()
+        
+        for reminder in result {
+            let dateKey = "\(reminder.id.uuidString)_\(calendar.component(.year, from: reminder.dueDate))-\(calendar.component(.month, from: reminder.dueDate))-\(calendar.component(.day, from: reminder.dueDate))"
+            existingKeys.insert(dateKey)
         }
+        
+        for reminder in recurringReminders {
+            // Pass limitDate to avoid generating unnecessary dates
+            let futureDates = generateOccurrenceDates(for: reminder, limitDate: oneYearLater)
+            
+            for date in futureDates {
+                let dateKey = "\(reminder.id.uuidString)_\(calendar.component(.year, from: date))-\(calendar.component(.month, from: date))-\(calendar.component(.day, from: date))"
+                
+                if !existingKeys.contains(dateKey) {
+                    let uniqueInput = dateKey + "_\(reminder.createdAt.timeIntervalSince1970)"
+                    let stableID = UUID(uuidString: stableUUIDString(from: uniqueInput)) ?? UUID()
+                    
+                    let virtualReminder = Reminder(
+                        id: stableID,
+                        title: reminder.title,
+                        notes: reminder.notes,
+                        dueDate: date,
+                        priority: reminder.priority,
+                        category: reminder.category,
+                        repeatFrequency: reminder.repeatFrequency,
+                        excludedDates: reminder.excludedDates,
+                        originalReminderId: reminder.id,
+                        createdAt: reminder.createdAt
+                    )
+                    result.append(virtualReminder)
+                    existingKeys.insert(dateKey)
+                }
+            }
+        }
+        
         result.sort { r1, r2 in
-            if r1.isCompleted != r2.isCompleted {
-                return !r1.isCompleted
+            if r1.dueDate == r2.dueDate {
+                return r1.createdAt < r2.createdAt
             }
             return r1.dueDate < r2.dueDate
         }
+        
         return result
-    }
-    
-    var upcomingReminders: [Reminder] {
-        return reminders.filter { $0.dueDate > Date() && !$0.isCompleted }
-    }
-    
-    var completedReminders: [Reminder] {
-        return reminders.filter { $0.isCompleted }
-    }
-    
-    var overdueReminders: [Reminder] {
-        let now = Date()
-        let startOfToday = Calendar.current.startOfDay(for: now)
-        // 仅展示当天逾期的未完成提醒
-        return reminders.filter {
-            $0.dueDate < now && $0.dueDate >= startOfToday && !$0.isCompleted
-        }.sorted { $0.dueDate < $1.dueDate }
     }
     
     // MARK: - Recurring Reminder Expansion
     
     /// 为重复提醒生成未来 1 年内的所有虚拟日期
-    private func generateOccurrenceDates(for reminder: Reminder) -> [Date] {
+    private func generateOccurrenceDates(for reminder: Reminder, limitDate: Date? = nil) -> [Date] {
         guard reminder.repeatFrequency != .never,
               let component = reminder.repeatFrequency.calendarComponent else {
             return []
@@ -435,13 +524,21 @@ class ReminderStore: ObservableObject {
             maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
         }
         
+        // Use the tighter limit if provided
+        let effectiveMaxDate: Date
+        if let limit = limitDate {
+            effectiveMaxDate = min(limit, maxDate)
+        } else {
+            effectiveMaxDate = maxDate
+        }
+        
         var dates: [Date] = []
-        var occurrence = reminder.dueDate
         var count = 1
         
         while count <= 500 { // 安全上限
             guard let next = calendar.date(byAdding: component, value: count, to: reminder.dueDate) else { break }
-            if next > maxDate { break }
+            if next > effectiveMaxDate { break }
+            
             if next > now || calendar.isDate(next, inSameDayAs: now) {
                 if !isExcluded(next, in: reminder.excludedDates) {
                     dates.append(next)
@@ -477,7 +574,12 @@ class ReminderStore: ObservableObject {
             }
         }
         
-        return result.sorted { $0.dueDate < $1.dueDate }
+        return result.sorted { r1, r2 in
+            if r1.dueDate == r2.dueDate {
+                return r1.createdAt < r2.createdAt
+            }
+            return r1.dueDate < r2.dueDate
+        }
     }
     
     /// 快速判断某天是否是某个重复提醒的实例日期（不生成所有日期）
@@ -516,49 +618,6 @@ class ReminderStore: ObservableObject {
         guard let excluded = excludedDates else { return false }
         let calendar = Calendar.current
         return excluded.contains(where: { calendar.isDate($0, inSameDayAs: date) })
-    }
-    
-    /// filteredReminders 的增强版，包含重复提醒的未来实例
-    var expandedFilteredReminders: [Reminder] {
-        var result = filteredReminders
-        
-        // 获取所有未完成的重复提醒
-        let recurringReminders = reminders.filter {
-            $0.repeatFrequency != .never && !$0.isCompleted
-        }
-        
-        let calendar = Calendar.current
-        
-        for reminder in recurringReminders {
-            let futureDates = generateOccurrenceDates(for: reminder)
-            for date in futureDates {
-                // 避免与已有的 filteredReminders 重复（原始 dueDate）
-                if !result.contains(where: { $0.id == reminder.id && calendar.isDate($0.dueDate, inSameDayAs: date) }) {
-                    // 使用确定性 UUID：基于原始 ID + 日期，确保 SwiftUI 列表稳定
-                    let dateString = "\(calendar.component(.year, from: date))-\(calendar.component(.month, from: date))-\(calendar.component(.day, from: date))"
-                    let stableID = UUID(uuidString: stableUUIDString(from: reminder.id.uuidString + dateString))
-                        ?? UUID()
-                    
-                    let virtualReminder = Reminder(
-                        id: stableID,
-                        title: reminder.title,
-                        notes: reminder.notes,
-                        dueDate: date,
-                        priority: reminder.priority,
-                        category: reminder.category,
-                        repeatFrequency: reminder.repeatFrequency,
-                        excludedDates: reminder.excludedDates,
-                        originalReminderId: reminder.id
-                    )
-                    result.append(virtualReminder)
-                }
-            }
-        }
-        
-        // 重新排序
-        result.sort { $0.dueDate < $1.dueDate }
-        
-        return result
     }
     
     /// 基于输入字符串生成确定性 UUID 字符串

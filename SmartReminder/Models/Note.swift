@@ -8,13 +8,13 @@ import SwiftData
 
 @Model
 class Note {
-    var id: UUID
-    var title: String
-    var content: String
-    var color: String
-    var isPinned: Bool
-    var createdAt: Date
-    var updatedAt: Date
+    var id: UUID = UUID()
+    var title: String = ""
+    var content: String = ""
+    var color: String = ""
+    var isPinned: Bool = false
+    var createdAt: Date = Date()
+    var updatedAt: Date = Date()
     
     init(
         id: UUID = UUID(),

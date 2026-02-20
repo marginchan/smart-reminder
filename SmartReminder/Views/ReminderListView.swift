@@ -27,6 +27,14 @@ struct ReminderListView: View {
                         .onDisappear { withAnimation { showScrollToTop = true } }
                 }
             } else {
+                Color.clear
+                    .frame(height: 0)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .id("top")
+                    .onAppear { withAnimation { showScrollToTop = false } }
+                    .onDisappear { withAnimation { showScrollToTop = true } }
+                
                 // 今日已逾期
                 if !store.overdueReminders.isEmpty {
                     Section(header: Text("已逾期 (\(store.overdueReminders.count))").foregroundColor(.red)) {
@@ -131,14 +139,10 @@ struct ReminderListView: View {
     // MARK: - Components
     @ViewBuilder
     private func overdueRow(_ reminder: Reminder) -> some View {
-        let isFirst = reminder.id == store.overdueReminders.first?.id
         ReminderRowView(reminder: reminder, store: store)
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-            .id(isFirst ? "top" : reminder.id.uuidString)
-            .onAppear { if isFirst { withAnimation { showScrollToTop = false } } }
-            .onDisappear { if isFirst { withAnimation { showScrollToTop = true } } }
             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                 Button { reminderToDelete = reminder; showingDeleteAlert = true } label: {
                     Label("删除", systemImage: "trash")
@@ -153,14 +157,10 @@ struct ReminderListView: View {
 
     @ViewBuilder
     private func filteredRow(_ reminder: Reminder) -> some View {
-        let isFirst = store.overdueReminders.isEmpty && reminder.id == store.expandedFilteredReminders.first?.id
         ReminderRowView(reminder: reminder, store: store)
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-            .id(isFirst ? "top" : reminder.id.uuidString)
-            .onAppear { if isFirst { withAnimation { showScrollToTop = false } } }
-            .onDisappear { if isFirst { withAnimation { showScrollToTop = true } } }
             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                 Button { reminderToDelete = reminder; showingDeleteAlert = true } label: {
                     Label("删除", systemImage: "trash")

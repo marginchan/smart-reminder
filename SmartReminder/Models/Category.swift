@@ -9,11 +9,11 @@ import SwiftUI
 
 @Model
 class ReminderCategory {
-    var id: UUID
-    var name: String
-    var color: String
-    var icon: String
-    var createdAt: Date
+    var id: UUID = UUID()
+    var name: String = ""
+    var color: String = ""
+    var icon: String = ""
+    var createdAt: Date = Date()
     
     @Relationship(deleteRule: .nullify, inverse: \Reminder.category)
     var reminders: [Reminder]?

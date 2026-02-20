@@ -11,6 +11,10 @@ struct ReminderRowView: View {
     @State private var showingEditSheet = false
     
     var body: some View {
+        let overdue = isOverdue
+        let calendar = Calendar.current
+        let isToday = calendar.isDateInToday(reminder.dueDate)
+        
         HStack(alignment: .center, spacing: 12) {
             RoundedRectangle(cornerRadius: 4)
                 .fill(priorityColor)
@@ -55,12 +59,12 @@ struct ReminderRowView: View {
             VStack(alignment: .trailing, spacing: 4) {
                 Text(formattedTime(reminder.dueDate))
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(isOverdue ? .red : .primary)
-                let isToday = Calendar.current.isDateInToday(reminder.dueDate)
+                    .foregroundColor(overdue ? .red : .primary)
+                
                 Text(formattedDateShort(reminder.dueDate))
                     .font(.caption)
                     .fontWeight(isToday ? .semibold : .regular)
-                    .foregroundColor(isOverdue ? .red : (isToday ? .accentColor : .secondary))
+                    .foregroundColor(overdue ? .red : (isToday ? .accentColor : .secondary))
             }
             .padding(.trailing, 16)
         }

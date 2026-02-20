@@ -8,15 +8,15 @@ import SwiftData
 
 @Model
 class Reminder {
-    var id: UUID
-    var title: String
-    var notes: String
-    var dueDate: Date
-    var isCompleted: Bool
-    var priority: Priority
+    var id: UUID = UUID()
+    var title: String = ""
+    var notes: String = ""
+    var dueDate: Date = Date()
+    var isCompleted: Bool = false
+    var priority: Priority = Priority.medium
     var category: ReminderCategory?
-    var repeatFrequency: RepeatFrequency
-    var createdAt: Date
+    var repeatFrequency: RepeatFrequency = RepeatFrequency.never
+    var createdAt: Date = Date()
     var notificationIdentifier: String?
     
     var excludedDates: [Date]?
@@ -32,7 +32,8 @@ class Reminder {
         category: ReminderCategory? = nil,
         repeatFrequency: RepeatFrequency = .never,
         excludedDates: [Date]? = nil,
-        originalReminderId: UUID? = nil
+        originalReminderId: UUID? = nil,
+        createdAt: Date = Date()
     ) {
         self.id = id
         self.title = title
@@ -42,7 +43,7 @@ class Reminder {
         self.priority = priority
         self.category = category
         self.repeatFrequency = repeatFrequency
-        self.createdAt = Date()
+        self.createdAt = createdAt
         self.notificationIdentifier = id.uuidString
         self.excludedDates = excludedDates
         self.originalReminderId = originalReminderId
