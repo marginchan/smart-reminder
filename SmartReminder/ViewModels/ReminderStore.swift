@@ -565,12 +565,35 @@ class ReminderStore: ObservableObject {
         }
         
         for reminder in recurringReminders {
-            // 原始日期已经在上面处理了，跳过
             if calendar.isDate(reminder.dueDate, inSameDayAs: date) { continue }
             
-            // 检查该日期是否是这个重复提醒的某个实例
             if isOccurrenceDate(date, for: reminder) {
-                result.append(reminder)
+                var targetDateComponents = calendar.dateComponents([.year, .month, .day], from: date)
+                let originalTimeComponents = calendar.dateComponents([.hour, .minute, .second], from: reminder.dueDate)
+                
+                targetDateComponents.hour = originalTimeComponents.hour
+                targetDateComponents.minute = originalTimeComponents.minute
+                targetDateComponents.second = originalTimeComponents.second
+                
+                if let newDueDate = calendar.date(from: targetDateComponents) {
+                    let virtualReminder = Reminder(
+                        id: reminder.id,
+                        title: reminder.title,
+                        notes: reminder.notes,
+                        dueDate: newDueDate,
+                        priority: reminder.priority,
+                        category: reminder.category,
+                        repeatFrequency: reminder.repeatFrequency,
+                        excludedDates: reminder.excludedDates,
+                        originalReminderId: reminder.id,
+                        createdAt: reminder.createdAt
+                    )
+                    
+                    let dateKey = "\(reminder.id.uuidString)_\(targetDateComponents.year!)-\(targetDateComponents.month!)-\(targetDateComponents.day!)"
+                    virtualReminder.id = UUID(uuidString: stableUUIDString(from: dateKey)) ?? UUID()
+                    
+                    result.append(virtualReminder)
+                }
             }
         }
         
