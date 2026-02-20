@@ -250,7 +250,7 @@ struct HeartParticle: Identifiable {
 }
 
 struct GarfieldGameView: View {
-    @State private var state: GarfieldState = .sleeping
+    @State private var state: GarfieldState = .awake
     @State private var hunger: Double = 0.5 // 0 to 1
     @State private var happiness: Double = 0.5 // 0 to 1
     
@@ -308,19 +308,19 @@ struct GarfieldGameView: View {
                 // Tail
                 Capsule()
                     .fill(garfieldDarkOrange)
-                    .frame(width: 20, height: 100)
-                    .offset(x: 80, y: 30)
-                    .rotationEffect(.degrees(tailAngle + 45), anchor: .bottom)
+                    .frame(width: 24, height: 75)
+                    .offset(x: 55, y: 35)
+                    .rotationEffect(.degrees(tailAngle + 40), anchor: .bottom)
                     // Tail stripes
                     .overlay(
-                        VStack(spacing: 10) {
-                            ForEach(0..<4) { _ in
+                        VStack(spacing: 8) {
+                            ForEach(0..<3) { _ in
                                 Capsule()
-                                    .fill(Color.black.opacity(0.6))
-                                    .frame(width: 20, height: 5)
+                                    .fill(Color.black.opacity(0.5))
+                                    .frame(width: 24, height: 4)
                             }
                         }
-                        .offset(y: -10)
+                        .offset(y: -5)
                     )
                 
                 // Body
@@ -518,13 +518,15 @@ struct GarfieldGameView: View {
                         .stroke(Color.black, lineWidth: 1.5)
                     }
                     
-                    // Whiskers (tiny)
+                    // Whiskers (3 on each side)
                     Group {
-                        Path { path in path.move(to: CGPoint(x: -25, y: 35)); path.addLine(to: CGPoint(x: -40, y: 32)) }.stroke(Color.black.opacity(0.4), lineWidth: 1)
-                        Path { path in path.move(to: CGPoint(x: -25, y: 39)); path.addLine(to: CGPoint(x: -40, y: 39)) }.stroke(Color.black.opacity(0.4), lineWidth: 1)
+                        Path { path in path.move(to: CGPoint(x: -22, y: 35)); path.addLine(to: CGPoint(x: -42, y: 31)) }.stroke(Color.black.opacity(0.4), lineWidth: 1.5)
+                        Path { path in path.move(to: CGPoint(x: -22, y: 39)); path.addLine(to: CGPoint(x: -45, y: 39)) }.stroke(Color.black.opacity(0.4), lineWidth: 1.5)
+                        Path { path in path.move(to: CGPoint(x: -22, y: 43)); path.addLine(to: CGPoint(x: -42, y: 47)) }.stroke(Color.black.opacity(0.4), lineWidth: 1.5)
                         
-                        Path { path in path.move(to: CGPoint(x: 25, y: 35)); path.addLine(to: CGPoint(x: 40, y: 32)) }.stroke(Color.black.opacity(0.4), lineWidth: 1)
-                        Path { path in path.move(to: CGPoint(x: 25, y: 39)); path.addLine(to: CGPoint(x: 40, y: 39)) }.stroke(Color.black.opacity(0.4), lineWidth: 1)
+                        Path { path in path.move(to: CGPoint(x: 22, y: 35)); path.addLine(to: CGPoint(x: 42, y: 31)) }.stroke(Color.black.opacity(0.4), lineWidth: 1.5)
+                        Path { path in path.move(to: CGPoint(x: 22, y: 39)); path.addLine(to: CGPoint(x: 45, y: 39)) }.stroke(Color.black.opacity(0.4), lineWidth: 1.5)
+                        Path { path in path.move(to: CGPoint(x: 22, y: 43)); path.addLine(to: CGPoint(x: 42, y: 47)) }.stroke(Color.black.opacity(0.4), lineWidth: 1.5)
                     }
                 }
                 .rotationEffect(.degrees(state == .sleeping ? 5 : 0))
