@@ -206,7 +206,7 @@ struct ReminderListView: View {
                     .font(.headline)
                     .foregroundColor(.primary)
                 
-                Text("享受你的摸鱼时间吧 ☕️")
+                Text("享受你的撸猫时间吧 ☕️")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }

@@ -8,6 +8,7 @@ import SwiftUI
 struct AddNoteView: View {
     @ObservedObject var store: ReminderStore
     @Environment(\.dismiss) var dismiss
+    @Environment(\.colorScheme) var colorScheme
     var note: Note?
     
     @State private var title: String = ""
@@ -112,12 +113,19 @@ struct AddNoteView: View {
     }
     
     private func colorButton(color: String) -> some View {
-        Button {
+        let displayColor = Color.fromHex(color).opacity(colorScheme == .dark ? 0.2 : 0.15)
+        let cardStrokeColor = Color.fromHex(color).opacity(0.3)
+        
+        return Button {
             selectedColor = color
         } label: {
             Circle()
-                .fill(Color.fromHex(color))
+                .fill(displayColor)
                 .frame(width: 44, height: 44)
+                .overlay(
+                    Circle()
+                        .stroke(cardStrokeColor, lineWidth: 1)
+                )
                 .overlay(
                     Circle()
                         .stroke(Color.fromHex(color), lineWidth: selectedColor == color ? 3 : 0)

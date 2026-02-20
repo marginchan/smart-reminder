@@ -181,12 +181,12 @@ class ReminderStore: ObservableObject {
         
         let descriptor = FetchDescriptor<Note>()
         let fetchedNotes = (try? context.fetch(descriptor)) ?? []
-        // Sort in memory: pinned first, then by updatedAt descending
+        // Sort in memory: pinned first, then by createdAt descending
         notes = fetchedNotes.sorted {
             if $0.isPinned != $1.isPinned {
                 return $0.isPinned && !$1.isPinned
             }
-            return $0.updatedAt > $1.updatedAt
+            return $0.createdAt > $1.createdAt
         }
     }
     
