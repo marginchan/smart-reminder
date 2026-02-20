@@ -80,7 +80,6 @@ enum RepeatFrequency: String, Codable, CaseIterable {
     case daily = "每天"
     case weekly = "每周"
     case monthly = "每月"
-    case yearly = "每年"
     
     var calendarComponent: Calendar.Component? {
         switch self {
@@ -88,7 +87,6 @@ enum RepeatFrequency: String, Codable, CaseIterable {
         case .daily: return .day
         case .weekly: return .weekOfYear
         case .monthly: return .month
-        case .yearly: return .year
         }
     }
 }

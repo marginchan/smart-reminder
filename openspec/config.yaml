@@ -1,0 +1,9 @@
+version: 1.0
+project:
+  name: SmartReminder
+  type: iOS-SwiftUI-App
+schemas:
+  default: spec-driven
+rules:
+  - enforce_isDeleted_checks_for_models
+  - routing_all_data_logic_through_viewmodels

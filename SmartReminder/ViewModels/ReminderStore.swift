@@ -231,13 +231,7 @@ class ReminderStore: ObservableObject {
               
         let calendar = Calendar.current
         let now = Date()
-        let maxDate: Date
-        switch reminder.repeatFrequency {
-        case .yearly:
-            maxDate = calendar.date(byAdding: .year, value: 5, to: now) ?? now
-        default:
-            maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
-        }
+        let maxDate: Date = calendar.date(byAdding: .year, value: 1, to: now) ?? now
         
         var dates: [Date] = []
         var count = 1
@@ -559,10 +553,8 @@ class ReminderStore: ObservableObject {
             parsedRepeat = .daily
         } else if text.contains("每周") {
             parsedRepeat = .weekly
-        } else if text.contains("每月") {
+        } else if text.lowercased().contains("每月") || text.lowercased().contains("月") {
             parsedRepeat = .monthly
-        } else if text.contains("每年") {
-            parsedRepeat = .yearly
         }
         
         return ParsedReminder(
