@@ -184,32 +184,36 @@ struct CategoryRowView: View {
     @ObservedObject var store: ReminderStore
     
     var body: some View {
-        HStack {
-            Image(systemName: category.icon)
-                .font(.title3)
-                .foregroundColor(Color.fromHex( category.color))
-                .frame(width: 36, height: 36)
-                .background(Color.fromHex( category.color).opacity(0.15))
-                .cornerRadius(8)
-            
-            Text(category.name)
-                .font(.body)
-                .foregroundColor(.primary)
-            
-            Spacer()
-            
-            let count = store.reminders.filter { $0.category?.id == category.id && !$0.isCompleted && $0.dueDate >= Date() }.count
-            if count > 0 {
-                Text("\(count)")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .frame(minWidth: 22, minHeight: 22)
-                    .background(Color.blue)
-                    .cornerRadius(11)
+        if category.isDeleted || category.modelContext == nil {
+            EmptyView()
+        } else {
+            HStack {
+                Image(systemName: category.icon)
+                    .font(.title3)
+                    .foregroundColor(Color.fromHex( category.color))
+                    .frame(width: 36, height: 36)
+                    .background(Color.fromHex( category.color).opacity(0.15))
+                    .cornerRadius(8)
+                
+                Text(category.name)
+                    .font(.body)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                let count = store.reminders.filter { $0.category?.id == category.id && !$0.isCompleted && $0.dueDate >= Date() }.count
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .frame(minWidth: 22, minHeight: 22)
+                        .background(Color.blue)
+                        .cornerRadius(11)
+                }
             }
+            .padding(.vertical, 4)
         }
-        .padding(.vertical, 4)
     }
 }
 
@@ -227,38 +231,42 @@ struct CategoryDetailView: View {
     }
     
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 16) {
-                if activeReminders.isEmpty {
-                    VStack(spacing: 20) {
-                        Spacer().frame(height: 50)
-                        Image(systemName: category.icon)
-                            .font(.system(size: 60))
-                            .foregroundColor(Color.fromHex(category.color))
-                            .opacity(0.3)
-                        Text("该分类下暂无待办提醒")
-                            .foregroundColor(.secondary)
+        if category.isDeleted || category.modelContext == nil {
+            EmptyView()
+        } else {
+            ScrollView {
+                LazyVStack(spacing: 16) {
+                    if activeReminders.isEmpty {
+                        VStack(spacing: 20) {
+                            Spacer().frame(height: 50)
+                            Image(systemName: category.icon)
+                                .font(.system(size: 60))
+                                .foregroundColor(Color.fromHex(category.color))
+                                .opacity(0.3)
+                            Text("该分类下暂无待办提醒")
+                                .foregroundColor(.secondary)
+                        }
+                    } else {
+                        ForEach(activeReminders) { reminder in
+                            ReminderRowView(reminder: reminder, store: store)
+                        }
                     }
-                } else {
-                    ForEach(activeReminders) { reminder in
-                        ReminderRowView(reminder: reminder, store: store)
+                }
+                .padding()
+            }
+            .background(Color.appSystemBackground)
+            .navigationTitle(category.name)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: { showingEditSheet = true }) {
+                        Image(systemName: "pencil.circle.fill")
+                            .font(.title3)
                     }
                 }
             }
-            .padding()
-        }
-        .background(Color.appSystemBackground)
-        .navigationTitle(category.name)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: { showingEditSheet = true }) {
-                    Image(systemName: "pencil.circle.fill")
-                        .font(.title3)
-                }
+            .sheet(isPresented: $showingEditSheet) {
+                EditCategoryView(category: category, store: store)
             }
-        }
-        .sheet(isPresented: $showingEditSheet) {
-            EditCategoryView(category: category, store: store)
         }
     }
 }

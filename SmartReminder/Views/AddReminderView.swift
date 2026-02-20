@@ -152,6 +152,11 @@ struct AddReminderView: View {
             }
             applyDefaultCategory()
         }
+        .onChange(of: initialDate) { oldValue, newValue in
+            if let newDate = newValue {
+                dueDate = newDate
+            }
+        }
         .onChange(of: store.categories) { oldValue, newValue in
             applyDefaultCategory()
         }

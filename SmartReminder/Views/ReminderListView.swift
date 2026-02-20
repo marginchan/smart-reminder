@@ -136,46 +136,54 @@ struct ReminderListView: View {
     // MARK: - Components
     @ViewBuilder
     private func overdueRow(_ reminder: Reminder) -> some View {
-        let isFirst = reminder.id == store.overdueReminders.first?.id
-        ReminderRowView(reminder: reminder, store: store)
-            .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-            .id(reminder.id)
-            .onAppear { if isFirst { withAnimation { showScrollToTop = false } } }
-            .onDisappear { if isFirst { withAnimation { showScrollToTop = true } } }
-            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                Button { reminderToDelete = reminder; showingDeleteAlert = true } label: {
-                    Label("删除", systemImage: "trash")
-                }.tint(.red)
-            }
-            .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                Button { withAnimation(.easeOut(duration: 0.3)) { store.toggleComplete(reminder) } } label: {
-                    Label("完成", systemImage: "checkmark")
-                }.tint(.green)
-            }
+        if reminder.isDeleted || reminder.modelContext == nil {
+            EmptyView()
+        } else {
+            let isFirst = reminder.id == store.overdueReminders.first?.id
+            ReminderRowView(reminder: reminder, store: store)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                .id(reminder.id)
+                .onAppear { if isFirst { withAnimation { showScrollToTop = false } } }
+                .onDisappear { if isFirst { withAnimation { showScrollToTop = true } } }
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button { reminderToDelete = reminder; showingDeleteAlert = true } label: {
+                        Label("删除", systemImage: "trash")
+                    }.tint(.red)
+                }
+                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                    Button { withAnimation(.easeOut(duration: 0.3)) { store.toggleComplete(reminder) } } label: {
+                        Label("完成", systemImage: "checkmark")
+                    }.tint(.green)
+                }
+        }
     }
 
     @ViewBuilder
     private func filteredRow(_ reminder: Reminder) -> some View {
-        let isFirst = store.overdueReminders.isEmpty && reminder.id == store.expandedFilteredReminders.first?.id
-        ReminderRowView(reminder: reminder, store: store)
-            .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-            .id(reminder.id)
-            .onAppear { if isFirst { withAnimation { showScrollToTop = false } } }
-            .onDisappear { if isFirst { withAnimation { showScrollToTop = true } } }
-            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                Button { reminderToDelete = reminder; showingDeleteAlert = true } label: {
-                    Label("删除", systemImage: "trash")
-                }.tint(.red)
-            }
-            .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                Button { withAnimation(.easeOut(duration: 0.3)) { store.toggleComplete(reminder) } } label: {
-                    Label("完成", systemImage: "checkmark")
-                }.tint(.green)
-            }
+        if reminder.isDeleted || reminder.modelContext == nil {
+            EmptyView()
+        } else {
+            let isFirst = store.overdueReminders.isEmpty && reminder.id == store.expandedFilteredReminders.first?.id
+            ReminderRowView(reminder: reminder, store: store)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                .id(reminder.id)
+                .onAppear { if isFirst { withAnimation { showScrollToTop = false } } }
+                .onDisappear { if isFirst { withAnimation { showScrollToTop = true } } }
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button { reminderToDelete = reminder; showingDeleteAlert = true } label: {
+                        Label("删除", systemImage: "trash")
+                    }.tint(.red)
+                }
+                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                    Button { withAnimation(.easeOut(duration: 0.3)) { store.toggleComplete(reminder) } } label: {
+                        Label("完成", systemImage: "checkmark")
+                    }.tint(.green)
+                }
+        }
     }
 
 

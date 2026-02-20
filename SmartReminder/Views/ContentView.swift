@@ -193,6 +193,7 @@ struct CalendarWeekView: View {
         }
         .sheet(isPresented: $showingAddReminder) {
             AddReminderView(store: store, isPresented: $showingAddReminder, initialDate: selectedDateForAdd)
+                .id(selectedDateForAdd)
         }
     }
     
@@ -939,6 +940,7 @@ struct CalendarMonthView: View {
             }
             .sheet(isPresented: $showingAddReminder) {
                 AddReminderView(store: store, isPresented: $showingAddReminder, initialDate: selectedDate)
+                    .id(selectedDate)
             }
             .onAppear {
                 if selectedDate == nil {

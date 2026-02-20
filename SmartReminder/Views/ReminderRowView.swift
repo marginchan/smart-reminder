@@ -11,73 +11,77 @@ struct ReminderRowView: View {
     @State private var showingEditSheet = false
     
     var body: some View {
-        let overdue = isOverdue
-        let calendar = Calendar.current
-        let isToday = calendar.isDateInToday(reminder.dueDate)
-        
-        HStack(alignment: .center, spacing: 12) {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(priorityColor)
-                .frame(width: 4)
-                .padding(.vertical, 12)
-                .padding(.leading, 12)
+        if reminder.isDeleted || reminder.modelContext == nil {
+            EmptyView()
+        } else {
+            let overdue = isOverdue
+            let calendar = Calendar.current
+            let isToday = calendar.isDateInToday(reminder.dueDate)
             
-            VStack(alignment: .leading, spacing: 6) {
-                Text(reminder.title)
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .strikethrough(reminder.isCompleted)
-                    .foregroundColor(reminder.isCompleted ? .secondary : .primary)
-                    .lineLimit(1)
+            HStack(alignment: .center, spacing: 12) {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(priorityColor)
+                    .frame(width: 4)
+                    .padding(.vertical, 12)
+                    .padding(.leading, 12)
                 
-                HStack(spacing: 8) {
-                    if let category = reminder.category {
-                        HStack(spacing: 4) {
-                            Image(systemName: category.icon)
-                            Text(category.name)
-                        }
-                        .font(.caption2)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.secondary.opacity(0.1))
-                        .foregroundColor(.secondary)
-                        .cornerRadius(6)
-                    }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(reminder.title)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .strikethrough(reminder.isCompleted)
+                        .foregroundColor(reminder.isCompleted ? .secondary : .primary)
+                        .lineLimit(1)
                     
-                    if !reminder.notes.isEmpty {
-                        Text(reminder.notes)
-                            .font(.caption)
+                    HStack(spacing: 8) {
+                        if let category = reminder.category {
+                            HStack(spacing: 4) {
+                                Image(systemName: category.icon)
+                                Text(category.name)
+                            }
+                            .font(.caption2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.secondary.opacity(0.1))
                             .foregroundColor(.secondary)
-                            .lineLimit(1)
+                            .cornerRadius(6)
+                        }
+                        
+                        if !reminder.notes.isEmpty {
+                            Text(reminder.notes)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        }
                     }
                 }
-            }
-            .padding(.vertical, 8)
-            
-            Spacer()
-            
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(formattedTime(reminder.dueDate))
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(overdue ? .red : .primary)
+                .padding(.vertical, 8)
                 
-                Text(formattedDateShort(reminder.dueDate))
-                    .font(.caption)
-                    .fontWeight(isToday ? .semibold : .regular)
-                    .foregroundColor(overdue ? .red : (isToday ? .accentColor : .secondary))
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(formattedTime(reminder.dueDate))
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(overdue ? .red : .primary)
+                    
+                    Text(formattedDateShort(reminder.dueDate))
+                        .font(.caption)
+                        .fontWeight(isToday ? .semibold : .regular)
+                        .foregroundColor(overdue ? .red : (isToday ? .accentColor : .secondary))
+                }
+                .padding(.trailing, 16)
             }
-            .padding(.trailing, 16)
-        }
-        .frame(height: 72)
-        .background(Color.appSecondarySystemBackground)
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            showingEditSheet = true
-        }
-        .sheet(isPresented: $showingEditSheet) {
-            EditReminderView(reminder: reminder, store: store, isPresented: $showingEditSheet)
+            .frame(height: 72)
+            .background(Color.appSecondarySystemBackground)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                showingEditSheet = true
+            }
+            .sheet(isPresented: $showingEditSheet) {
+                EditReminderView(reminder: reminder, store: store, isPresented: $showingEditSheet)
+            }
         }
     }
     
