@@ -270,68 +270,65 @@ struct InteractiveCatView: View {
             // Cat Body
             ZStack {
                 // Tail
-                Path { path in
-                    path.move(to: CGPoint(x: 60, y: 70))
-                    path.addQuadCurve(to: CGPoint(x: 120, y: 20), control: CGPoint(x: 100, y: 70))
-                }
-                .stroke(catDarkColor, style: StrokeStyle(lineWidth: 18, lineCap: .round))
-                .rotationEffect(.degrees(tailAngle), anchor: .init(x: 0.25, y: 0.8))
+                Capsule()
+                    .fill(catDarkColor)
+                    .frame(width: 16, height: 80)
+                    .offset(x: 60, y: 10)
+                    .rotationEffect(.degrees(tailAngle + 45), anchor: .bottom)
                 
                 // Main Body
-                RoundedRectangle(cornerRadius: 60)
+                RoundedRectangle(cornerRadius: 50)
                     .fill(catColor)
-                    .frame(width: 150, height: 110)
+                    .frame(width: 140, height: 110)
                     .offset(y: 30)
                     .scaleEffect(y: isBreathing ? 1.02 : 0.98, anchor: .bottom)
                 
                 // Belly
                 Ellipse()
                     .fill(catBellyColor)
-                    .frame(width: 100, height: 70)
+                    .frame(width: 90, height: 60)
                     .offset(y: 45)
                     .scaleEffect(y: isBreathing ? 1.03 : 0.97, anchor: .center)
                 
                 // Head
                 ZStack {
                     // Ears
-                    Path { path in
-                        // Left ear
-                        path.move(to: CGPoint(x: -35, y: -20))
-                        path.addLine(to: CGPoint(x: -50, y: -60))
-                        path.addLine(to: CGPoint(x: -15, y: -45))
-                        
-                        // Right ear
-                        path.move(to: CGPoint(x: 35, y: -20))
-                        path.addLine(to: CGPoint(x: 50, y: -60))
-                        path.addLine(to: CGPoint(x: 15, y: -45))
-                    }
-                    .fill(catDarkColor)
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(catDarkColor)
+                        .frame(width: 40, height: 40)
+                        .rotationEffect(.degrees(-15))
+                        .offset(x: -35, y: -45)
                     
-                    // Face
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(catDarkColor)
+                        .frame(width: 40, height: 40)
+                        .rotationEffect(.degrees(15))
+                        .offset(x: 35, y: -45)
+                    
+                    // Face Base
                     Ellipse()
                         .fill(catColor)
                         .frame(width: 120, height: 95)
                         .offset(y: -20)
                     
-                    // Cheeks
+                    // Cheeks / lower face
                     Ellipse()
                         .fill(catBellyColor)
                         .frame(width: 100, height: 50)
-                        .offset(y: 0)
+                        .offset(y: -5)
                     
                     // Eyes
                     switch catState {
                     case .sleeping:
-                        // Sleeping eyes (closed curves)
-                        Path { path in
-                            path.move(to: CGPoint(x: -30, y: -20))
-                            path.addQuadCurve(to: CGPoint(x: -10, y: -20), control: CGPoint(x: -20, y: -15))
-                            
-                            path.move(to: CGPoint(x: 10, y: -20))
-                            path.addQuadCurve(to: CGPoint(x: 30, y: -20), control: CGPoint(x: 20, y: -15))
-                        }
-                        .stroke(Color.black.opacity(0.7), style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                        
+                        // Sleeping (straight line)
+                        Capsule()
+                            .fill(Color.black.opacity(0.7))
+                            .frame(width: 16, height: 3)
+                            .offset(x: -20, y: -20)
+                        Capsule()
+                            .fill(Color.black.opacity(0.7))
+                            .frame(width: 16, height: 3)
+                            .offset(x: 20, y: -20)
                     case .awake:
                         // Awake eyes (round, blinking)
                         Circle()
@@ -348,31 +345,37 @@ struct InteractiveCatView: View {
                             
                     case .happy:
                         // Happy eyes (^ ^)
-                        Path { path in
-                            path.move(to: CGPoint(x: -30, y: -15))
-                            path.addQuadCurve(to: CGPoint(x: -10, y: -15), control: CGPoint(x: -20, y: -25))
-                            
-                            path.move(to: CGPoint(x: 10, y: -15))
-                            path.addQuadCurve(to: CGPoint(x: 30, y: -15), control: CGPoint(x: 20, y: -25))
-                        }
-                        .stroke(Color.black.opacity(0.8), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        Circle()
+                            .trim(from: 0.5, to: 1.0)
+                            .stroke(Color.black.opacity(0.8), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                            .frame(width: 16, height: 16)
+                            .offset(x: -20, y: -15)
+                        
+                        Circle()
+                            .trim(from: 0.5, to: 1.0)
+                            .stroke(Color.black.opacity(0.8), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                            .frame(width: 16, height: 16)
+                            .offset(x: 20, y: -15)
                     }
                     
                     // Nose
                     Ellipse()
                         .fill(Color.pink)
-                        .frame(width: 12, height: 8)
+                        .frame(width: 10, height: 6)
                         .offset(y: -5)
                     
                     // Mouth
-                    Path { path in
-                        path.move(to: CGPoint(x: 0, y: -1))
-                        path.addLine(to: CGPoint(x: 0, y: 5))
-                        path.addQuadCurve(to: CGPoint(x: -12, y: 10), control: CGPoint(x: -5, y: 12))
-                        path.move(to: CGPoint(x: 0, y: 5))
-                        path.addQuadCurve(to: CGPoint(x: 12, y: 10), control: CGPoint(x: 5, y: 12))
+                    HStack(spacing: 0) {
+                        Circle()
+                            .trim(from: 0.0, to: 0.5)
+                            .stroke(Color.black.opacity(0.6), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                            .frame(width: 10, height: 10)
+                        Circle()
+                            .trim(from: 0.0, to: 0.5)
+                            .stroke(Color.black.opacity(0.6), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                            .frame(width: 10, height: 10)
                     }
-                    .stroke(Color.black.opacity(0.6), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .offset(y: 2)
                 }
                 .rotationEffect(.degrees(catState == .sleeping ? 5 : 0))
             }
