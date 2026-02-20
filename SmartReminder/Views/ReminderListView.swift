@@ -202,20 +202,6 @@ struct ReminderListView: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
-            
-            Button(action: { showingAddReminder = true }) {
-                HStack {
-                    Image(systemName: "plus.circle.fill")
-                    Text("添加新任务")
-                }
-                .fontWeight(.medium)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .background(Color.blue.opacity(0.1))
-                .foregroundColor(.blue)
-                .cornerRadius(20)
-            }
-            .padding(.top, 8)
         }
         .padding(.vertical, 40)
         .frame(maxWidth: .infinity)

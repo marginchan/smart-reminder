@@ -287,7 +287,7 @@ struct DaySectionView: View {
                     Spacer()
                     
                     if !reminders.isEmpty {
-                        Text("\(reminders.count) 个待办")
+                        Text("\(reminders.count) 个提醒")
                             .font(.caption)
                             .fontWeight(.medium)
                             .foregroundColor(.white)
@@ -296,7 +296,7 @@ struct DaySectionView: View {
                             .background(Color.blue)
                             .clipShape(Capsule())
                     } else {
-                        Text("无待办")
+                        Text("无提醒")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -315,18 +315,21 @@ struct DaySectionView: View {
             .buttonStyle(PlainButtonStyle())
             
             if isExpanded {
-                Button(action: {
-                    selectedDateForAdd = date
-                    showingAddReminder = true
-                }) {
-                    Label("添加提醒", systemImage: "plus.circle.fill")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.blue)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(Color.blue.opacity(0.1))
-                        .cornerRadius(8)
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        selectedDateForAdd = date
+                        showingAddReminder = true
+                    }) {
+                        Label("添加提醒", systemImage: "plus")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.blue)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.blue.opacity(0.1))
+                            .clipShape(Capsule())
+                    }
                 }
                 .padding(.horizontal, 14)
                 .padding(.bottom, 4)
@@ -405,7 +408,7 @@ struct DaySectionView: View {
     
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "M月d日"
+        formatter.dateFormat = "yyyy年M月d日"
         return formatter.string(from: date)
     }
     
