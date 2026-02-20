@@ -11,47 +11,47 @@ struct ReminderRowView: View {
     @State private var showingEditSheet = false
     
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             RoundedRectangle(cornerRadius: 4)
                 .fill(priorityColor)
                 .frame(width: 4)
                 .padding(.vertical, 12)
                 .padding(.leading, 12)
             
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(reminder.title)
                     .font(.headline)
                     .fontWeight(.bold)
                     .strikethrough(reminder.isCompleted)
                     .foregroundColor(reminder.isCompleted ? .secondary : .primary)
-                    .lineLimit(2)
+                    .lineLimit(1)
                 
-                if !reminder.notes.isEmpty {
-                    Text(reminder.notes)
-                        .font(.subheadline)
+                HStack(spacing: 8) {
+                    if let category = reminder.category {
+                        HStack(spacing: 4) {
+                            Image(systemName: category.icon)
+                            Text(category.name)
+                        }
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.1))
                         .foregroundColor(.secondary)
-                        .lineLimit(1)
-                }
-                
-                // 分类标签（弱化）
-                if let category = reminder.category {
-                    HStack(spacing: 4) {
-                        Image(systemName: category.icon)
-                        Text(category.name)
+                        .cornerRadius(6)
                     }
-                    .font(.caption)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.secondary.opacity(0.1))
-                    .foregroundColor(.secondary)
-                    .cornerRadius(8)
+                    
+                    if !reminder.notes.isEmpty {
+                        Text(reminder.notes)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                    }
                 }
             }
-            .padding(.vertical, 16)
+            .padding(.vertical, 8)
             
             Spacer()
             
-            // 时间放右侧
             VStack(alignment: .trailing, spacing: 4) {
                 Text(formattedTime(reminder.dueDate))
                     .font(.system(size: 16, weight: .bold))
@@ -63,8 +63,8 @@ struct ReminderRowView: View {
                     .foregroundColor(isOverdue ? .red : (isToday ? .accentColor : .secondary))
             }
             .padding(.trailing, 16)
-            .padding(.top, 16)
         }
+        .frame(height: 72)
         .background(Color.appSecondarySystemBackground)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)

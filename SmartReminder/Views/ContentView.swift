@@ -343,7 +343,7 @@ struct DaySectionView: View {
                             ReminderRowView(reminder: reminder, store: store)
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
-                                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button { reminderToDelete = reminder; showingDeleteAlert = true } label: {
                                         Label("删除", systemImage: "trash")
@@ -358,7 +358,7 @@ struct DaySectionView: View {
                     }
                     .listStyle(.plain)
                     .scrollDisabled(true)
-                    .frame(height: CGFloat(reminders.count) * 80)
+                    .frame(height: CGFloat(reminders.count) * 84)
                 }
             }
         }
@@ -850,7 +850,7 @@ struct CalendarMonthView: View {
                             }
                             .listStyle(.plain)
                             .scrollDisabled(true)
-                            .frame(height: CGFloat(selectedDayReminders.count) * 80)
+                            .frame(height: CGFloat(selectedDayReminders.count) * 84)
                         } else {
                             VStack(spacing: 20) {
                                 Spacer().frame(height: 40)
