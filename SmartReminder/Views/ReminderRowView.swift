@@ -65,8 +65,8 @@ struct ReminderRowView: View {
                         .foregroundColor(overdue ? .red : .primary)
                     
                     Text(formattedDateShort(reminder.dueDate))
-                        .font(.caption)
-                        .fontWeight(isToday ? .semibold : .regular)
+                        .font(.subheadline)
+                        .fontWeight(isToday ? .bold : .medium)
                         .foregroundColor(overdue ? .red : (isToday ? .accentColor : .secondary))
                 }
                 .padding(.trailing, 16)
