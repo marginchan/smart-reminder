@@ -32,27 +32,31 @@ final class LunarFestivalService {
         "3-8": "妇女节",
         "3-12": "植树节",
         "4-1": "愚人节",
-        "4-22": "地球日",
         "5-1": "劳动节",
         "5-4": "青年节",
+        "5-12": "护士节",
         "6-1": "儿童节",
         "7-1": "建党节",
         "8-1": "建军节",
         "9-10": "教师节",
-        "10-1": "国庆",
+        "10-1": "国庆节",
+        "10-31": "万圣夜",
+        "11-1": "万圣节",
         "12-24": "平安夜",
-        "12-25": "圣诞"
+        "12-25": "圣诞节"
     ]
     
     private let lunarFestivals: [String: String] = [
         "1-1": "春节",
-        "1-15": "元宵",
-        "5-5": "端午",
-        "7-7": "七夕",
-        "7-15": "中元",
-        "8-15": "中秋",
-        "9-9": "重阳",
-        "12-8": "腊八",
+        "1-15": "元宵节",
+        "2-2": "龙抬头",
+        "5-5": "端午节",
+        "7-7": "七夕节",
+        "7-15": "中元节",
+        "8-15": "中秋节",
+        "9-9": "重阳节",
+        "10-1": "寒衣节",
+        "12-8": "腊八节",
         "12-23": "小年"
     ]
     
@@ -90,15 +94,10 @@ final class LunarFestivalService {
     }
     
     private func dynamicSolarFestival(for date: Date) -> String? {
-        if isMotherDay(date) {
-            return "母亲节"
-        }
-        if isFatherDay(date) {
-            return "父亲节"
-        }
-        if isQingming(date) {
-            return "清明"
-        }
+        if isMotherDay(date) { return "母亲节" }
+        if isFatherDay(date) { return "父亲节" }
+        if isThanksgiving(date) { return "感恩节" }
+        if isQingming(date) { return "清明节" }
         return nil
     }
     
@@ -108,6 +107,11 @@ final class LunarFestivalService {
     
     private func isFatherDay(_ date: Date) -> Bool {
         isNthWeekdayInMonth(date, weekday: 1, ordinal: 3, month: 6)
+    }
+    
+    // 感恩节：11月的第4个星期四 (weekday = 5)
+    private func isThanksgiving(_ date: Date) -> Bool {
+        isNthWeekdayInMonth(date, weekday: 5, ordinal: 4, month: 11)
     }
     
     private func isNthWeekdayInMonth(_ date: Date, weekday: Int, ordinal: Int, month: Int) -> Bool {

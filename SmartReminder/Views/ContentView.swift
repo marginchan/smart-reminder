@@ -746,88 +746,9 @@ struct CalendarMonthView: View {
         calendar.date(byAdding: .month, value: 12, to: baseMonth) ?? baseMonth
     }
     
-    var body: some View {
-        NavigationStack {
-            VStack {
-                HStack {
-                    Button {
-                        shiftMonth(-1)
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(width: 32, height: 32)
-                    }
-                    
-                    Spacer()
-                    
-                    Text(formatMonthYear(selectedMonth))
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    if selectedMonth != baseMonth {
-                        Button {
-                            jumpToToday()
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "arrow.uturn.backward")
-                                    .font(.caption2)
-                                Text("回到今天")
-                                    .font(.caption2.weight(.semibold))
-                            }
-                            .foregroundColor(.blue)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(
-                                Capsule()
-                                    .stroke(Color.blue.opacity(0.5), lineWidth: 1)
-                            )
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    Button {
-                        shiftMonth(1)
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(width: 32, height: 32)
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.top, 8)
-                
-                HStack {
-                    ForEach(["一", "二", "三", "四", "五", "六", "日"], id: \.self) { day in
-                        Text(day)
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .frame(maxWidth: .infinity)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.top, 6)
-                
-                TabView(selection: $selectedMonth) {
-                    ForEach(-12...12, id: \.self) { monthOffset in
-                        if let monthDate = calendar.date(byAdding: .month, value: monthOffset, to: baseMonth) {
-                            let normalized = calendar.date(from: calendar.dateComponents([.year, .month], from: monthDate)) ?? monthDate
-                            MonthGridView(date: normalized, store: store, selectedDate: selectedDate) { day in
-                                selectDay(day)
-                            }
-                            .tag(normalized)
-                        }
-                    }
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .frame(height: 350)
-                
-                Divider()
-                
-                ScrollViewReader { scrollProxy in
-                    ScrollView {
-                        VStack(spacing: 12) {
+    @ViewBuilder
+    private var remindersListView: some View {
+                VStack(spacing: 12) {
                             if let date = selectedDate {
                             HStack {
                                 Text(formatDetailDate(date))
@@ -885,6 +806,96 @@ struct CalendarMonthView: View {
                             }
                         }
                     }
+                    .padding(.bottom, 40)
+    }
+
+    @ViewBuilder
+    private var calendarHeaderAndGrid: some View {
+        VStack(spacing: 0) {
+                ZStack {
+                    Text(formatMonthYear(selectedMonth))
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    HStack {
+                        Button {
+                            shiftMonth(-1)
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.subheadline.weight(.semibold))
+                                .frame(width: 32, height: 32)
+                        }
+                        
+                        Spacer()
+                        
+                        if selectedMonth != baseMonth {
+                            Button {
+                                jumpToToday()
+                            } label: {
+                                Text("回到今天")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundColor(.blue)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color.blue.opacity(0.1))
+                                    .clipShape(Capsule())
+                            }
+                            .padding(.trailing, 4)
+                        }
+                        
+                        Button {
+                            shiftMonth(1)
+                        } label: {
+                            Image(systemName: "chevron.right")
+                                .font(.subheadline.weight(.semibold))
+                                .frame(width: 32, height: 32)
+                        }
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+                
+                HStack {
+                    ForEach(["日", "一", "二", "三", "四", "五", "六"], id: \.self) { day in
+                        Text(day)
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .frame(maxWidth: .infinity)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.top, 6)
+                TabView(selection: $selectedMonth) {
+                    ForEach(-12...12, id: \.self) { monthOffset in
+                        if let monthDate = calendar.date(byAdding: .month, value: monthOffset, to: baseMonth) {
+                            let normalized = calendar.date(from: calendar.dateComponents([.year, .month], from: monthDate)) ?? monthDate
+                            MonthGridView(date: normalized, store: store, selectedDate: selectedDate) { day in
+                                selectDay(day)
+                            }
+                            .tag(normalized)
+                        }
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .frame(height: gridHeight(for: selectedMonth))
+                .animation(.easeInOut, value: selectedMonth)
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollViewReader { scrollProxy in
+                ScrollView {
+                    VStack(spacing: 0) {
+                calendarHeaderAndGrid
+
+                
+                Divider()
+                    .padding(.bottom, 8)
+                
+                remindersListView
+
                     .id("top")
                     .background(GeometryReader { geo in
                         Color.clear.preference(key: ScrollOffsetPreferenceKey.self, value: geo.frame(in: .named("scroll")).minY)
@@ -1027,6 +1038,15 @@ struct CalendarMonthView: View {
     private func isAfterMax(_ date: Date) -> Bool {
         calendar.compare(date, to: maxMonth, toGranularity: .month) == .orderedDescending
     }
+    
+    private func gridHeight(for date: Date) -> CGFloat {
+        let daysCount = date.getAllDaysInMonth().count
+        let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: date))!
+        let weekday = calendar.component(.weekday, from: startOfMonth)
+        let startOffset = (weekday - 1) % 7
+        let rows = Int(ceil(Double(daysCount + startOffset) / 7.0))
+        return CGFloat(rows * 65 + max(rows - 1, 0) * 10) + 20
+    }
 }
 
 struct MonthGridView: View {
@@ -1041,25 +1061,29 @@ struct MonthGridView: View {
         let days = date.getAllDaysInMonth()
         let startOffset = getStartOffset(for: date)
         
-        LazyVGrid(columns: columns, spacing: 10) {
-            ForEach(0..<startOffset, id: \.self) { _ in
-                Text("").frame(height: 45)
+        VStack(spacing: 0) {
+            LazyVGrid(columns: columns, spacing: 10) {
+                ForEach(0..<startOffset, id: \.self) { _ in
+                    Color.clear.frame(height: 65)
+                }
+                
+                ForEach(days, id: \.self) { day in
+                    let isSelected = selectedDate != nil && Calendar.current.isDate(day, inSameDayAs: selectedDate!)
+                    DayCell(date: day, store: store, isSelected: isSelected)
+                        .onTapGesture { onSelect(day) }
+                }
             }
-            
-            ForEach(days, id: \.self) { day in
-                let isSelected = selectedDate != nil && Calendar.current.isDate(day, inSameDayAs: selectedDate!)
-                DayCell(date: day, store: store, isSelected: isSelected)
-                    .onTapGesture { onSelect(day) }
-            }
+            .padding(.horizontal)
+            .padding(.vertical, 10)
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal)
     }
     
     private func getStartOffset(for date: Date) -> Int {
         let calendar = Calendar.current
         let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: date))!
         let weekday = calendar.component(.weekday, from: startOfMonth)
-        return (weekday + 5) % 7
+        return (weekday - 1) % 7
     }
 }
 
@@ -1083,12 +1107,12 @@ struct DayCell: View {
     }
     
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 2) {
             Text("\(Calendar.current.component(.day, from: date))")
                 .font(.body)
                 .fontWeight(isToday || isSelected ? .bold : .regular)
                 .foregroundColor(isToday ? .white : (isSelected ? .blue : .primary))
-                .frame(width: 35, height: 35)
+                .frame(width: 32, height: 32)
                 .background(isToday ? Color.blue : (isSelected ? Color.blue.opacity(0.15) : Color.clear))
                 .clipShape(Circle())
                 .overlay(
@@ -1098,12 +1122,8 @@ struct DayCell: View {
             
             if let festival = lunarInfo.festival {
                 Text(festival)
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 1)
-                    .background(Color.red.opacity(0.9))
-                    .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+                    .font(.system(size: 9, weight: .regular))
+                    .foregroundColor(.red)
                     .lineLimit(1)
             } else {
                 Text(lunarInfo.lunarText)
@@ -1124,7 +1144,7 @@ struct DayCell: View {
             }
             .frame(height: 12)
         }
-        .frame(height: 60)
+        .frame(height: 65)
         .contentShape(Rectangle())
     }
 }
