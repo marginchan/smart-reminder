@@ -27,14 +27,6 @@ struct ReminderListView: View {
                         .onDisappear { withAnimation { showScrollToTop = true } }
                 }
             } else {
-                Color.clear
-                    .frame(height: 0)
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
-                    .id("top")
-                    .onAppear { withAnimation { showScrollToTop = false } }
-                    .onDisappear { withAnimation { showScrollToTop = true } }
-                
                 // 今日已逾期
                 if !store.overdueReminders.isEmpty {
                     Section(header: Text("已逾期 (\(store.overdueReminders.count))").foregroundColor(.red)) {
@@ -55,6 +47,7 @@ struct ReminderListView: View {
             }
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
         .listSectionSpacing(0)
         .background(Color.appSystemBackground)
         .toolbar {
@@ -118,7 +111,11 @@ struct ReminderListView: View {
             if showScrollToTop {
                 Button {
                     withAnimation {
-                        scrollProxy.scrollTo("top", anchor: .top)
+                        if store.overdueReminders.isEmpty && store.expandedFilteredReminders.isEmpty {
+                            scrollProxy.scrollTo("top", anchor: .top)
+                        } else if let firstId = store.overdueReminders.first?.id ?? store.expandedFilteredReminders.first?.id {
+                            scrollProxy.scrollTo(firstId, anchor: .top)
+                        }
                     }
                 } label: {
                     Image(systemName: "arrow.up")
@@ -139,10 +136,14 @@ struct ReminderListView: View {
     // MARK: - Components
     @ViewBuilder
     private func overdueRow(_ reminder: Reminder) -> some View {
+        let isFirst = reminder.id == store.overdueReminders.first?.id
         ReminderRowView(reminder: reminder, store: store)
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+            .id(reminder.id)
+            .onAppear { if isFirst { withAnimation { showScrollToTop = false } } }
+            .onDisappear { if isFirst { withAnimation { showScrollToTop = true } } }
             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                 Button { reminderToDelete = reminder; showingDeleteAlert = true } label: {
                     Label("删除", systemImage: "trash")
@@ -157,10 +158,14 @@ struct ReminderListView: View {
 
     @ViewBuilder
     private func filteredRow(_ reminder: Reminder) -> some View {
+        let isFirst = store.overdueReminders.isEmpty && reminder.id == store.expandedFilteredReminders.first?.id
         ReminderRowView(reminder: reminder, store: store)
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+            .id(reminder.id)
+            .onAppear { if isFirst { withAnimation { showScrollToTop = false } } }
+            .onDisappear { if isFirst { withAnimation { showScrollToTop = true } } }
             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                 Button { reminderToDelete = reminder; showingDeleteAlert = true } label: {
                     Label("删除", systemImage: "trash")
