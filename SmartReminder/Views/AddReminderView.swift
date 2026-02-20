@@ -205,6 +205,8 @@ struct EditReminderView: View {
     @State private var repeatFrequency: RepeatFrequency
     @State private var showingAddCategory = false
     @State private var showingDatePicker = false
+    @State private var showingUpdateActionSheet = false
+    @State private var showingDeleteActionSheet = false
     
     init(reminder: Reminder, store: ReminderStore, isPresented: Binding<Bool>) {
         self.reminder = reminder
@@ -312,8 +314,12 @@ struct EditReminderView: View {
                 
                 Section {
                     Button(role: .destructive) {
-                        store.deleteReminder(reminder)
-                        isPresented = false
+                        if reminder.repeatFrequency != .never {
+                            showingDeleteActionSheet = true
+                        } else {
+                            store.deleteReminder(reminder, deleteFuture: false)
+                            isPresented = false
+                        }
                     } label: {
                         HStack {
                             Spacer()
@@ -331,6 +337,34 @@ struct EditReminderView: View {
             .sheet(isPresented: $showingDatePicker) {
                 CustomDatePickerSheet(date: $dueDate)
             }
+            .actionSheet(isPresented: $showingUpdateActionSheet) {
+                ActionSheet(
+                    title: Text("保存重复提醒"),
+                    message: Text("您想要如何应用这些更改？"),
+                    buttons: [
+                        .default(Text("仅修改本次")) {
+                            updateReminder(modifyFuture: false)
+                        },
+                        .default(Text("修改整个系列")) {
+                            updateReminder(modifyFuture: true)
+                        },
+                        .cancel(Text("取消"))
+                    ]
+                )
+            }
+            .alert("删除重复提醒", isPresented: $showingDeleteActionSheet) {
+                Button("仅删除本次", role: .destructive) {
+                    store.deleteReminder(reminder, deleteFuture: false)
+                    isPresented = false
+                }
+                Button("删除整个系列", role: .destructive) {
+                    store.deleteReminder(reminder, deleteFuture: true)
+                    isPresented = false
+                }
+                Button("取消", role: .cancel) { }
+            } message: {
+                Text("您想要仅删除本次提醒，还是删除这个系列的所有后续提醒？")
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") {
@@ -340,21 +374,25 @@ struct EditReminderView: View {
                 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") {
-                        updateReminder()
+                        if reminder.repeatFrequency != .never {
+                            showingUpdateActionSheet = true
+                        } else {
+                            updateReminder(modifyFuture: false)
+                        }
                     }
                 }
             }
         }
     }
     
-    private func updateReminder() {
+    private func updateReminder(modifyFuture: Bool) {
         reminder.title = title
         reminder.notes = notes
         reminder.dueDate = dueDate
         reminder.priority = priority
         reminder.category = selectedCategory
         reminder.repeatFrequency = repeatFrequency
-        store.updateReminder(reminder)
+        store.updateReminder(reminder, modifyFuture: modifyFuture)
         isPresented = false
     }
 }

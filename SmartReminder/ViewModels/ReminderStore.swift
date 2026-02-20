@@ -96,6 +96,42 @@ class ReminderStore: ObservableObject {
             seedDefaultNotes()
             hasInitializedSampleData = true
         }
+        
+        migrateLegacyRecurringReminders()
+    }
+    
+    private func migrateLegacyRecurringReminders() {
+        guard let context = modelContext else { return }
+        
+        let descriptor = FetchDescriptor<Reminder>()
+        let allReminders = (try? context.fetch(descriptor)) ?? []
+        // Find existing reminders that are recurring but don't have a groupId
+        let legacyRecurringReminders = allReminders.filter { $0.repeatFrequency != .never && $0.groupId == nil }
+        
+        guard !legacyRecurringReminders.isEmpty else { return }
+        
+        for reminder in legacyRecurringReminders {
+            let groupId = UUID().uuidString
+            reminder.groupId = groupId
+            
+            let futureDates = generateDatesFor(reminder: reminder)
+            for date in futureDates {
+                let newReminder = Reminder(
+                    title: reminder.title,
+                    notes: reminder.notes,
+                    dueDate: date,
+                    priority: reminder.priority,
+                    category: reminder.category,
+                    repeatFrequency: reminder.repeatFrequency,
+                    groupId: groupId,
+                    createdAt: reminder.createdAt
+                )
+                context.insert(newReminder)
+            }
+        }
+        
+        save()
+        refresh()
     }
     
     // MARK: - Fetch
@@ -158,80 +194,105 @@ class ReminderStore: ObservableObject {
     
     func addReminder(_ reminder: Reminder) {
         guard let context = modelContext else { return }
-        context.insert(reminder)
+        
+        if reminder.repeatFrequency != .never {
+            let groupId = UUID().uuidString
+            reminder.groupId = groupId
+            context.insert(reminder)
+            scheduleNotification(for: reminder)
+            
+            let futureDates = generateDatesFor(reminder: reminder)
+            for date in futureDates {
+                let newReminder = Reminder(
+                    title: reminder.title,
+                    notes: reminder.notes,
+                    dueDate: date,
+                    priority: reminder.priority,
+                    category: reminder.category,
+                    repeatFrequency: reminder.repeatFrequency,
+                    groupId: groupId,
+                    createdAt: reminder.createdAt
+                )
+                context.insert(newReminder)
+                scheduleNotification(for: newReminder)
+            }
+        } else {
+            context.insert(reminder)
+            scheduleNotification(for: reminder)
+        }
+        
         save()
         fetchReminders()
-        scheduleNotification(for: reminder)
     }
     
-    func updateReminder(_ reminder: Reminder) {
+    private func generateDatesFor(reminder: Reminder) -> [Date] {
+        guard reminder.repeatFrequency != .never,
+              let component = reminder.repeatFrequency.calendarComponent else { return [] }
+              
+        let calendar = Calendar.current
+        let now = Date()
+        let maxDate: Date
+        switch reminder.repeatFrequency {
+        case .yearly:
+            maxDate = calendar.date(byAdding: .year, value: 5, to: now) ?? now
+        default:
+            maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
+        }
+        
+        var dates: [Date] = []
+        var count = 1
+        
+        while count <= 365 {
+            guard let next = calendar.date(byAdding: component, value: count, to: reminder.dueDate) else { break }
+            if next > maxDate { break }
+            dates.append(next)
+            count += 1
+        }
+        return dates
+    }
+    
+    func updateReminder(_ reminder: Reminder, modifyFuture: Bool = false) {
+        if modifyFuture, let groupId = reminder.groupId {
+            let futureReminders = reminders.filter { $0.groupId == groupId && $0.dueDate > reminder.dueDate }
+            for future in futureReminders {
+                future.title = reminder.title
+                future.notes = reminder.notes
+                future.priority = reminder.priority
+                future.category = reminder.category
+                cancelNotification(for: future)
+                scheduleNotification(for: future)
+            }
+        } else if reminder.groupId != nil {
+            reminder.groupId = nil
+        }
+        
         save()
         fetchReminders()
         cancelNotification(for: reminder)
         scheduleNotification(for: reminder)
     }
     
-    func deleteReminder(_ reminder: Reminder) {
+    func deleteReminder(_ reminder: Reminder, deleteFuture: Bool = false) {
         guard let context = modelContext else { return }
-        let targetId = reminder.originalReminderId ?? reminder.id
-        guard let original = reminders.first(where: { $0.id == targetId }) else { return }
         
-        cancelNotification(for: original)
-        context.delete(original)
+        if deleteFuture, let groupId = reminder.groupId {
+            let futureReminders = reminders.filter { $0.groupId == groupId && $0.dueDate >= reminder.dueDate }
+            for future in futureReminders {
+                cancelNotification(for: future)
+                context.delete(future)
+            }
+        } else {
+            cancelNotification(for: reminder)
+            context.delete(reminder)
+        }
+        
         save()
         fetchReminders()
         notificationManager.clearBadge()
     }
     
-    func deleteOccurrence(of reminder: Reminder) {
-        let targetId = reminder.originalReminderId ?? reminder.id
-        guard let original = reminders.first(where: { $0.id == targetId }) else { return }
-        
-        let dateToExclude = Calendar.current.startOfDay(for: reminder.dueDate)
-        var newExcluded = original.excludedDates ?? []
-        newExcluded.append(dateToExclude)
-        original.excludedDates = newExcluded
-        
-        save()
-        fetchReminders()
-        
-        cancelNotification(for: original)
-        scheduleNotification(for: original)
-    }
-    
     func toggleComplete(_ reminder: Reminder) {
-        let isVirtual = reminder.originalReminderId != nil
-        
-        if !reminder.isCompleted && reminder.repeatFrequency != .never {
-            let targetId = reminder.originalReminderId ?? reminder.id
-            if let original = reminders.first(where: { $0.id == targetId }) {
-                let completedClone = Reminder(
-                    title: original.title,
-                    notes: original.notes,
-                    dueDate: reminder.dueDate,
-                    isCompleted: true,
-                    priority: original.priority,
-                    category: original.category,
-                    repeatFrequency: .never,
-                    createdAt: original.createdAt
-                )
-                modelContext?.insert(completedClone)
-                
-                if isVirtual {
-                    var newExcluded = original.excludedDates ?? []
-                    newExcluded.append(Calendar.current.startOfDay(for: reminder.dueDate))
-                    original.excludedDates = newExcluded
-                } else {
-                    if let component = original.repeatFrequency.calendarComponent,
-                       let nextDate = Calendar.current.date(byAdding: component, value: 1, to: original.dueDate) {
-                        original.dueDate = nextDate
-                    }
-                }
-            }
-        } else {
-            reminder.isCompleted.toggle()
-        }
-        
+        reminder.isCompleted.toggle()
         save()
         fetchReminders()
         
@@ -447,214 +508,17 @@ class ReminderStore: ObservableObject {
         return result
     }
     
-    private var calculateAllExpandedFilteredReminders: [Reminder] {
-        var result = baseFilteredReminders
-        
-        let recurringReminders = result.filter { $0.repeatFrequency != .never }
-        let calendar = Calendar.current
-        let now = Date()
-        // Limit generation to 1 year from now
-        let oneYearLater = calendar.date(byAdding: .year, value: 1, to: now) ?? now
-        
-        // Optimization: Use a Set for O(1) lookup of existing dates
-        // Key format: "ReminderID_Year-Month-Day"
-        var existingKeys = Set<String>()
-        
-        for reminder in result {
-            let dateKey = "\(reminder.id.uuidString)_\(calendar.component(.year, from: reminder.dueDate))-\(calendar.component(.month, from: reminder.dueDate))-\(calendar.component(.day, from: reminder.dueDate))"
-            existingKeys.insert(dateKey)
-        }
-        
-        for reminder in recurringReminders {
-            // Pass limitDate to avoid generating unnecessary dates
-            let futureDates = generateOccurrenceDates(for: reminder, limitDate: oneYearLater)
-            
-            for date in futureDates {
-                let dateKey = "\(reminder.id.uuidString)_\(calendar.component(.year, from: date))-\(calendar.component(.month, from: date))-\(calendar.component(.day, from: date))"
-                
-                if !existingKeys.contains(dateKey) {
-                    let uniqueInput = dateKey + "_\(reminder.createdAt.timeIntervalSince1970)"
-                    let stableID = UUID(uuidString: stableUUIDString(from: uniqueInput)) ?? UUID()
-                    
-                    let virtualReminder = Reminder(
-                        id: stableID,
-                        title: reminder.title,
-                        notes: reminder.notes,
-                        dueDate: date,
-                        priority: reminder.priority,
-                        category: reminder.category,
-                        repeatFrequency: reminder.repeatFrequency,
-                        excludedDates: reminder.excludedDates,
-                        originalReminderId: reminder.id,
-                        createdAt: reminder.createdAt
-                    )
-                    result.append(virtualReminder)
-                    existingKeys.insert(dateKey)
-                }
-            }
-        }
-        
-        result.sort { r1, r2 in
-            if r1.dueDate == r2.dueDate {
-                return r1.createdAt < r2.createdAt
-            }
-            return r1.dueDate < r2.dueDate
-        }
-        
-        return result
-    }
-    
-    // MARK: - Recurring Reminder Expansion
-    
-    /// 为重复提醒生成未来 1 年内的所有虚拟日期
-    private func generateOccurrenceDates(for reminder: Reminder, limitDate: Date? = nil) -> [Date] {
-        guard reminder.repeatFrequency != .never,
-              let component = reminder.repeatFrequency.calendarComponent else {
-            return []
-        }
-        
-        let calendar = Calendar.current
-        let now = Date()
-        let maxDate: Date
-        
-        switch reminder.repeatFrequency {
-        case .yearly:
-            maxDate = calendar.date(byAdding: .year, value: 3, to: now) ?? now
-        default:
-            maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
-        }
-        
-        // Use the tighter limit if provided
-        let effectiveMaxDate: Date
-        if let limit = limitDate {
-            effectiveMaxDate = min(limit, maxDate)
-        } else {
-            effectiveMaxDate = maxDate
-        }
-        
-        var dates: [Date] = []
-        var count = 1
-        
-        while count <= 500 { // 安全上限
-            guard let next = calendar.date(byAdding: component, value: count, to: reminder.dueDate) else { break }
-            if next > effectiveMaxDate { break }
-            
-            if next > now || calendar.isDate(next, inSameDayAs: now) {
-                if !isExcluded(next, in: reminder.excludedDates) {
-                    dates.append(next)
-                }
-            }
-            count += 1
-        }
-        
-        return dates
-    }
-    
-    /// 返回某天所有提醒（含重复提醒的虚拟实例）
+    /// 返回某天所有提醒
     func remindersForDate(_ date: Date) -> [Reminder] {
         let calendar = Calendar.current
-        
-        // 1. 原始提醒：dueDate 就在这一天的
-        var result = reminders.filter {
+        return reminders.filter {
             calendar.isDate($0.dueDate, inSameDayAs: date) && !$0.isCompleted
-        }
-        
-        // 2. 重复提醒的虚拟实例
-        let recurringReminders = reminders.filter {
-            $0.repeatFrequency != .never && !$0.isCompleted
-        }
-        
-        for reminder in recurringReminders {
-            if calendar.isDate(reminder.dueDate, inSameDayAs: date) { continue }
-            
-            if isOccurrenceDate(date, for: reminder) {
-                var targetDateComponents = calendar.dateComponents([.year, .month, .day], from: date)
-                let originalTimeComponents = calendar.dateComponents([.hour, .minute, .second], from: reminder.dueDate)
-                
-                targetDateComponents.hour = originalTimeComponents.hour
-                targetDateComponents.minute = originalTimeComponents.minute
-                targetDateComponents.second = originalTimeComponents.second
-                
-                if let newDueDate = calendar.date(from: targetDateComponents) {
-                    let virtualReminder = Reminder(
-                        id: reminder.id,
-                        title: reminder.title,
-                        notes: reminder.notes,
-                        dueDate: newDueDate,
-                        priority: reminder.priority,
-                        category: reminder.category,
-                        repeatFrequency: reminder.repeatFrequency,
-                        excludedDates: reminder.excludedDates,
-                        originalReminderId: reminder.id,
-                        createdAt: reminder.createdAt
-                    )
-                    
-                    let dateKey = "\(reminder.id.uuidString)_\(targetDateComponents.year!)-\(targetDateComponents.month!)-\(targetDateComponents.day!)"
-                    virtualReminder.id = UUID(uuidString: stableUUIDString(from: dateKey)) ?? UUID()
-                    
-                    result.append(virtualReminder)
-                }
-            }
-        }
-        
-        return result.sorted { r1, r2 in
+        }.sorted { r1, r2 in
             if r1.dueDate == r2.dueDate {
                 return r1.createdAt < r2.createdAt
             }
             return r1.dueDate < r2.dueDate
         }
-    }
-    
-    /// 快速判断某天是否是某个重复提醒的实例日期（不生成所有日期）
-    private func isOccurrenceDate(_ date: Date, for reminder: Reminder) -> Bool {
-        guard reminder.repeatFrequency != .never,
-              let component = reminder.repeatFrequency.calendarComponent else {
-            return false
-        }
-        
-        let calendar = Calendar.current
-        let reminderDate = calendar.startOfDay(for: reminder.dueDate)
-        let targetDate = calendar.startOfDay(for: date)
-        
-        // 目标日期必须在原始日期之后且未被排除
-        guard targetDate > reminderDate else { return false }
-        if isExcluded(targetDate, in: reminder.excludedDates) { return false }
-        
-        switch reminder.repeatFrequency {
-        case .daily:
-            return true // 每天都是
-        case .weekly:
-            return calendar.component(.weekday, from: reminderDate) == calendar.component(.weekday, from: targetDate)
-        case .monthly:
-            return calendar.component(.day, from: reminderDate) == calendar.component(.day, from: targetDate)
-        case .yearly:
-            let rComps = calendar.dateComponents([.month, .day], from: reminderDate)
-            let tComps = calendar.dateComponents([.month, .day], from: targetDate)
-            return rComps.month == tComps.month && rComps.day == tComps.day
-        case .never:
-            return false
-        }
-    }
-    
-    // 检查日期是否在排除列表中
-    private func isExcluded(_ date: Date, in excludedDates: [Date]?) -> Bool {
-        guard let excluded = excludedDates else { return false }
-        let calendar = Calendar.current
-        return excluded.contains(where: { calendar.isDate($0, inSameDayAs: date) })
-    }
-    
-    /// 基于输入字符串生成确定性 UUID 字符串
-    private func stableUUIDString(from input: String) -> String {
-        var hash = [UInt8](repeating: 0, count: 16)
-        let data = Array(input.utf8)
-        for (i, byte) in data.enumerated() {
-            hash[i % 16] ^= byte
-            hash[i % 16] = hash[i % 16] &+ byte
-        }
-        // 格式化为 UUID 字符串
-        let hex = hash.map { String(format: "%02x", $0) }.joined()
-        let uuid = "\(hex.prefix(8))-\(hex.dropFirst(8).prefix(4))-\(hex.dropFirst(12).prefix(4))-\(hex.dropFirst(16).prefix(4))-\(hex.dropFirst(20).prefix(12))"
-        return uuid
     }
     
     // MARK: - Natural Language Processing

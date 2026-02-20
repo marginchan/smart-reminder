@@ -77,13 +77,13 @@ struct ReminderListView: View {
             if let reminder = reminderToDelete, reminder.repeatFrequency != .never {
                 Button("仅删除本次", role: .destructive) {
                     withAnimation(.easeOut(duration: 0.3)) {
-                        store.deleteOccurrence(of: reminder)
+                        store.deleteReminder(reminder, deleteFuture: false)
                     }
                     reminderToDelete = nil
                 }
                 Button("删除整个系列", role: .destructive) {
                     withAnimation(.easeOut(duration: 0.3)) {
-                        store.deleteReminder(reminder)
+                        store.deleteReminder(reminder, deleteFuture: true)
                     }
                     reminderToDelete = nil
                 }
