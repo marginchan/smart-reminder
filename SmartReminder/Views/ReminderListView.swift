@@ -518,15 +518,39 @@ struct GarfieldGameView: View {
                         .stroke(Color.black, lineWidth: 1.5)
                     }
                     
-                    // Whiskers (3 on each side)
+                    // Whiskers (3 on each side, curved and elegant)
                     Group {
-                        Path { path in path.move(to: CGPoint(x: -22, y: 35)); path.addLine(to: CGPoint(x: -42, y: 31)) }.stroke(Color.black.opacity(0.4), lineWidth: 1.5)
-                        Path { path in path.move(to: CGPoint(x: -22, y: 39)); path.addLine(to: CGPoint(x: -45, y: 39)) }.stroke(Color.black.opacity(0.4), lineWidth: 1.5)
-                        Path { path in path.move(to: CGPoint(x: -22, y: 43)); path.addLine(to: CGPoint(x: -42, y: 47)) }.stroke(Color.black.opacity(0.4), lineWidth: 1.5)
+                        // Left side
+                        Path { path in
+                            path.move(to: CGPoint(x: -25, y: 35))
+                            path.addQuadCurve(to: CGPoint(x: -65, y: 22), control: CGPoint(x: -45, y: 26))
+                        }.stroke(Color.black.opacity(0.5), style: StrokeStyle(lineWidth: 2, lineCap: .round))
                         
-                        Path { path in path.move(to: CGPoint(x: 22, y: 35)); path.addLine(to: CGPoint(x: 42, y: 31)) }.stroke(Color.black.opacity(0.4), lineWidth: 1.5)
-                        Path { path in path.move(to: CGPoint(x: 22, y: 39)); path.addLine(to: CGPoint(x: 45, y: 39)) }.stroke(Color.black.opacity(0.4), lineWidth: 1.5)
-                        Path { path in path.move(to: CGPoint(x: 22, y: 43)); path.addLine(to: CGPoint(x: 42, y: 47)) }.stroke(Color.black.opacity(0.4), lineWidth: 1.5)
+                        Path { path in
+                            path.move(to: CGPoint(x: -25, y: 41))
+                            path.addQuadCurve(to: CGPoint(x: -70, y: 41), control: CGPoint(x: -45, y: 38))
+                        }.stroke(Color.black.opacity(0.5), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                        
+                        Path { path in
+                            path.move(to: CGPoint(x: -25, y: 47))
+                            path.addQuadCurve(to: CGPoint(x: -65, y: 60), control: CGPoint(x: -45, y: 56))
+                        }.stroke(Color.black.opacity(0.5), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                        
+                        // Right side
+                        Path { path in
+                            path.move(to: CGPoint(x: 25, y: 35))
+                            path.addQuadCurve(to: CGPoint(x: 65, y: 22), control: CGPoint(x: 45, y: 26))
+                        }.stroke(Color.black.opacity(0.5), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                        
+                        Path { path in
+                            path.move(to: CGPoint(x: 25, y: 41))
+                            path.addQuadCurve(to: CGPoint(x: 70, y: 41), control: CGPoint(x: 45, y: 38))
+                        }.stroke(Color.black.opacity(0.5), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                        
+                        Path { path in
+                            path.move(to: CGPoint(x: 25, y: 47))
+                            path.addQuadCurve(to: CGPoint(x: 65, y: 60), control: CGPoint(x: 45, y: 56))
+                        }.stroke(Color.black.opacity(0.5), style: StrokeStyle(lineWidth: 2, lineCap: .round))
                     }
                 }
                 .rotationEffect(.degrees(state == .sleeping ? 5 : 0))
